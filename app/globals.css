@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f7f1;
+  --foreground: #1f292b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Brand — primary */
+  --color-brand-orange: #f47521;
+  --color-brand-yellow: #ffd44f;
+  --color-brand-teal: #00a2c0;
+  --color-brand-cyan: #00a2c0;
+
+  /* Brand — secondary */
+  --color-brand-peach: #f7d1b1;
+  --color-brand-cream: #f2dea9;
+  --color-brand-beige: #e8e4d7;
+  --color-brand-sand: #ecead5;
+  --color-brand-sky: #0dbdca;
+}
+
+body {
+  background: var(--background);
+  color: #1f292b;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+.animate-spin {
+  border-radius: 9999px !important;
+}
+
+::selection {
+  background: #f7d1b1;
+  color: #24323a;
+}
+
+input,
+select,
+textarea {
+  color: #171717;
+  color-scheme: light;
+}
+
+input[type="date"],
+input[type="month"],
+input[type="time"],
+input[type="datetime-local"] {
+  accent-color: var(--color-brand-orange);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  padding: 3px;
+  margin-left: 4px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f47521' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px 16px;
+  transition: background-color 0.15s ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="month"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  background-color: rgba(0, 162, 192, 0.14);
+}
+
+main [class~="bg-white"][class~="border-gray-200"] {
+  border-color: #e8e4d7;
+  box-shadow: 0 5px 16px rgba(31, 41, 43, 0.045);
+}
+
+main table thead {
+  letter-spacing: 0.08em;
+}
+
+.inventory-page > div:nth-child(2) > button {
+  box-shadow: 0 3px 10px rgba(31, 41, 43, 0.05);
+}
+
+@keyframes inventoryUrgentBlink {
+  0%,
+  100% {
+    background-color: #fff;
+    box-shadow: 0 5px 16px rgba(31, 41, 43, 0.045), 0 0 0 2px rgba(255, 212, 79, 0.75);
+  }
+  50% {
+    background-color: #fff4d6;
+    box-shadow: 0 5px 16px rgba(31, 41, 43, 0.045), 0 0 0 5px rgba(255, 212, 79, 0.24);
+  }
+}
+
+.inventory-urgent-blink {
+  animation: inventoryUrgentBlink 1.4s ease-in-out infinite;
+}
+
+.inventory-page > div:nth-child(2) > button {
+  position: relative;
+  overflow: hidden;
+  min-height: 7.25rem;
+  padding: 0.75rem 3.75rem 0.75rem 0.85rem;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.inventory-page > div:nth-child(2) > button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(31, 41, 43, 0.08);
+}
+
+.inventory-page input,
+.inventory-page select,
+.inventory-page button {
+  min-height: 44px;
+}
+
+.inventory-page .text-lg.font-medium.text-brand-cyan {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.inventory-page .text-base.font-medium.text-brand-cyan {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.inventory-page .md\:hidden > div {
+  padding: 0.85rem !important;
+}
+
+.inventory-page .md\:hidden > div .my-6 {
+  margin-top: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.inventory-page .md\:hidden > div .gap-4 {
+  gap: 0.75rem;
+}
+
+.inventory-page button {
+  cursor: pointer;
+}
+
+.inventory-page button:disabled {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-page .animate-pulse {
+    animation: none;
+  }
+
+  .inventory-urgent-blink {
+    animation: none;
+    background-color: #fff4d6;
+    box-shadow: 0 0 0 2px rgba(255, 212, 79, 0.75);
+  }
+}

@@ -1,0 +1,15 @@
+# MongoDB connection string used by API routes and seed scripts.
+MONGODB_URI=mongodb+srv://niranjanraju007_db_user:Niranjan@polarbear.x2jgtbw.mongodb.net/?appName=polarbear
+
+MONGODB_DB=polarbear
+
+# Secret used to sign and verify session JWTs. Replace this with a long random value.
+JWT_SECRET=replace-with-a-long-random-development-secret
+
+# AES-256-GCM key for encrypting sensitive PII. Must be exactly 64 hex characters.
+# Generate a key with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+FIELD_ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+# Optional values used by scripts/seed.ts.
+SEED_ADMIN_EMAIL=admin@pb.com
+SEED_ADMIN_PASSWORD=Test@123
