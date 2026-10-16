@@ -1,5 +1,15 @@
 export const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
+export function currentMonthRange(): { from: string; to: string } {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const from = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  return { from, to };
+}
+
 // Build from local calendar fields instead of toISOString(), which can shift
 // local midnight to the previous or next UTC date.
 export function localDateValue(date = new Date()): string {
