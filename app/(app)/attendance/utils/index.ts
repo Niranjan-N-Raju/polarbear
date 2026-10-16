@@ -1,5 +1,5 @@
 import type { AttendanceCycleRange, AttendanceStatus } from "@/types/attendance";
-import { localDateValue } from "@/lib/date-utils";
+export { datesBetween as enumerateDates } from "@/lib/date-utils";
 
 export const STATUS_OPTIONS: AttendanceStatus[] = ["Present", "Week Off", "Absent"];
 export const statusStyle: Record<AttendanceStatus, string> = {
@@ -22,17 +22,6 @@ export function formatDate(value: string) {
 
 export function monthLabel(value: string) {
   return new Intl.DateTimeFormat("en-IN", { month: "long", year: "numeric" }).format(monthStart(value));
-}
-
-export function enumerateDates(from: string, to: string) {
-  const dates: string[] = [];
-  const current = new Date(`${from}T00:00:00`);
-  const end = new Date(`${to}T00:00:00`);
-  while (current <= end) {
-    dates.push(localDateValue(current));
-    current.setDate(current.getDate() + 1);
-  }
-  return dates;
 }
 
 export function cycleRangeLabel(cycle: AttendanceCycleRange) {

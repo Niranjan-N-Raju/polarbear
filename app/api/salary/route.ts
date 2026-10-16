@@ -12,17 +12,7 @@ import { validateCsrf } from "@/lib/csrf";
 import { getAllowedFranchiseIdsForCaller } from "@/lib/user-permissions";
 import { auditLog } from "@/lib/audit-log";
 import { isValidPeriod, localDateValue, getCycleRange, resolveCycleSettings, roundCurrency } from "@/lib/salary-cycle";
-
-function enumerateDates(from: string, to: string) {
-  const dates: string[] = [];
-  const current = new Date(`${from}T00:00:00`);
-  const end = new Date(`${to}T00:00:00`);
-  while (current <= end) {
-    dates.push(localDateValue(current));
-    current.setDate(current.getDate() + 1);
-  }
-  return dates;
-}
+import { datesBetween as enumerateDates } from "@/lib/date-utils";
 
 async function authorizeStore(authId: string, role: string, franchiseId: string) {
   if (role !== "franchise_admin" || !mongoose.isValidObjectId(franchiseId)) {
