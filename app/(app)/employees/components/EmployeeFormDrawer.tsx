@@ -74,7 +74,13 @@ export default function EmployeeFormDrawer({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [loadingEmployeeDetails, setLoadingEmployeeDetails] = useState(Boolean(employee));
   const [fieldErrors, setFieldErrors] = useState<EmployeeFormErrors>({});
-  const [positionOptions, setPositionOptions] = useState<string[]>([]);
+  const [loadedPositions, setLoadedPositions] = useState<{
+    storeId: string;
+    positions: string[];
+  } | null>(null);
+  const positionOptions = activeStore.id && loadedPositions?.storeId === activeStore.id
+    ? loadedPositions.positions
+    : [];
   const [currentStep, setCurrentStep] = useState<EmployeeFormStep>(1);
   const [aadharFile, setAadharFile] = useState<File | null>(null);
   const [panFile, setPanFile] = useState<File | null>(null);
@@ -92,16 +98,14 @@ export default function EmployeeFormDrawer({
   }, []);
 
   useEffect(() => {
+    const storeId = activeStore.id;
+    if (!storeId) return;
     let cancelled = false;
-    if (!activeStore.id) {
-      setPositionOptions([]);
-      return;
-    }
-    employeesRequest(`/api/stores/positions?franchiseId=${encodeURIComponent(activeStore.id)}`)
+    employeesRequest(`/api/stores/positions?franchiseId=${encodeURIComponent(storeId)}`)
       .then(async (response) => {
         const data = await response.json() as { positions?: string[]; message?: string };
         if (!response.ok) throw new Error(data.message ?? "Failed to load store positions.");
-        if (!cancelled) setPositionOptions(data.positions ?? []);
+        if (!cancelled) setLoadedPositions({ storeId, positions: data.positions ?? [] });
       })
       .catch((loadError: unknown) => {
         if (!cancelled) error(loadError instanceof Error ? loadError.message : "Failed to load store positions.");
