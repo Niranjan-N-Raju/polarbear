@@ -1,17 +1,10 @@
-import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 import Franchise from "@/models/Franchise";
 import { getAuthInfo } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
-import { getAllowedFranchiseIdsForCaller } from "@/lib/user-permissions";
+import { getAuthorizedStoreAdminId } from "@/lib/api-auth";
 import { auditLog } from "@/lib/audit-log";
-
-async function authorizeStore(authId: string, role: string, franchiseId: string) {
-  if (role !== "franchise_admin" || !mongoose.isValidObjectId(franchiseId)) return false;
-  const allowedIds = await getAllowedFranchiseIdsForCaller({ id: authId, role });
-  return allowedIds?.includes(franchiseId) ?? false;
-}
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthInfo();
@@ -19,7 +12,7 @@ export async function GET(request: NextRequest) {
 
   const franchiseId = new URL(request.url).searchParams.get("franchiseId") ?? "";
   await connectToDatabase();
-  if (!(await authorizeStore(auth.id, auth.role, franchiseId))) {
+  if (!(await getAuthorizedStoreAdminId(auth, franchiseId))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
 
@@ -46,7 +39,7 @@ export async function PUT(request: NextRequest) {
   }
 
   await connectToDatabase();
-  if (!(await authorizeStore(auth.id, auth.role, franchiseId))) {
+  if (!(await getAuthorizedStoreAdminId(auth, franchiseId))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
 

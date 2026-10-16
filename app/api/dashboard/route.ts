@@ -8,18 +8,9 @@ import Sale from "@/models/Sale";
 import { getAuthInfo } from "@/lib/auth";
 import { computeMonthlyAttrition } from "@/lib/attrition";
 import { computeExpenseBreakdown, computePaymentMixTrend, computeWeekdayPerformance } from "@/lib/sales-insights";
+import { currentMonthRange } from "@/lib/date-utils";
 
 const FRANCHISE_COOKIE = "em_franchise";
-
-function currentMonthRange(): { from: string; to: string } {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const from = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-  return { from, to };
-}
 
 /** GET /api/dashboard — returns role-scoped stats for the dashboard */
 export async function GET() {

@@ -3,20 +3,10 @@
 import { useEffect, useState } from "react";
 import { useToast } from "@/app/hooks/useToast";
 import { useStoreModal } from "@/app/(app)/store-context";
-import { localDateValue } from "@/lib/date-utils";
+import { currentMonthRange, localDateValue } from "@/lib/date-utils";
 import type { DailySale } from "@/types/sales";
 import type { DashboardStats } from "@/types/dashboard";
 import { dashboardRequest } from "../apicall/dashboard";
-
-function currentMonthRange(): { from: string; to: string } {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const from = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-  return { from, to };
-}
 
 function todayRange(): { from: string; to: string } {
   const today = localDateValue();

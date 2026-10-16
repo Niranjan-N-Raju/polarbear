@@ -8,16 +8,10 @@ import ExtraDay from "@/models/ExtraDay";
 import Advance from "@/models/Advance";
 import { getAuthInfo } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
-import { getAllowedFranchiseIdsForCaller } from "@/lib/user-permissions";
+import { getAuthorizedStoreAdminId } from "@/lib/api-auth";
 import { isValidPeriod, localDateValue, getCycleRange, resolveCycleSettings, roundCurrency } from "@/lib/salary-cycle";
 import { datesBetween } from "@/lib/date-utils";
 import { decryptUserFields } from "@/lib/crypto";
-
-async function authorizeStore(authId: string, role: string, franchiseId: string) {
-  if (role !== "franchise_admin" || !mongoose.isValidObjectId(franchiseId)) return false;
-  const allowedIds = await getAllowedFranchiseIdsForCaller({ id: authId, role });
-  return allowedIds?.includes(franchiseId) ?? false;
-}
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthInfo();
@@ -35,7 +29,7 @@ export async function GET(request: NextRequest) {
   }
 
   await connectToDatabase();
-  if (!(await authorizeStore(auth.id, auth.role, franchiseId))) {
+  if (!(await getAuthorizedStoreAdminId(auth, franchiseId))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
 

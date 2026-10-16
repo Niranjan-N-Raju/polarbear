@@ -4,15 +4,7 @@ import Advance from "@/models/Advance";
 import { getAuthInfo } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
-import { getAllowedFranchiseIdsForCaller } from "@/lib/user-permissions";
-
-async function authorizeStore(authId: string, role: string, franchiseId: string) {
-  if (role !== "franchise_admin" || !mongoose.isValidObjectId(franchiseId)) {
-    return false;
-  }
-  const allowedIds = await getAllowedFranchiseIdsForCaller({ id: authId, role });
-  return allowedIds?.includes(franchiseId) ?? false;
-}
+import { getAuthorizedStoreAdminId } from "@/lib/api-auth";
 
 export async function PUT(
   request: NextRequest,
@@ -44,7 +36,7 @@ export async function PUT(
   if (!advance) {
     return NextResponse.json({ message: "Advance not found." }, { status: 404 });
   }
-  if (!(await authorizeStore(auth.id, auth.role, String(advance.franchise)))) {
+  if (!(await getAuthorizedStoreAdminId(auth, String(advance.franchise)))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
 
@@ -74,7 +66,7 @@ export async function DELETE(
   if (!advance) {
     return NextResponse.json({ message: "Advance not found." }, { status: 404 });
   }
-  if (!(await authorizeStore(auth.id, auth.role, String(advance.franchise)))) {
+  if (!(await getAuthorizedStoreAdminId(auth, String(advance.franchise)))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
 
