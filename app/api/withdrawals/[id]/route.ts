@@ -4,28 +4,8 @@ import Withdrawal from "@/models/Withdrawal";
 import { connectToDatabase } from "@/lib/mongodb";
 import { getAuthorizedStoreAdminId, requireAuth } from "@/lib/api-auth";
 import { validateCsrf } from "@/lib/csrf";
-import { DATE_PATTERN } from "@/lib/date-utils";
-
-interface WithdrawalPayload {
-  franchiseId?: string;
-  date?: string;
-  amount?: number;
-  type?: string;
-  reason?: string;
-}
-
-function validatePayload(body: WithdrawalPayload) {
-  if (!body.date || !DATE_PATTERN.test(body.date)) return { error: "A valid date is required." };
-  if (typeof body.amount !== "number" || !Number.isFinite(body.amount) || body.amount <= 0) {
-    return { error: "A valid amount is required." };
-  }
-  if (body.type !== "withdrawal" && body.type !== "repayment") {
-    return { error: "Type must be either withdrawal or repayment." };
-  }
-  const reason = body.reason?.trim() ?? "";
-  if (reason.length > 300) return { error: "Reason must be 300 characters or fewer." };
-  return { value: { date: body.date, amount: body.amount, type: body.type, reason } };
-}
+import { validateWithdrawalPayload } from "@/lib/withdrawals/validation";
+import type { WithdrawalPayload } from "@/lib/withdrawals/validation";
 
 export async function PUT(
   request: NextRequest,
@@ -48,7 +28,7 @@ export async function PUT(
   if (!franchiseId) {
     return NextResponse.json({ message: "A valid store is required." }, { status: 400 });
   }
-  const validation = validatePayload(body);
+  const validation = validateWithdrawalPayload(body);
   if ("error" in validation) return NextResponse.json({ message: validation.error }, { status: 400 });
 
   await connectToDatabase();

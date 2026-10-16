@@ -5,17 +5,9 @@ import User from "@/models/User";
 import { getAuthInfo } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
-import { getAllowedFranchiseIdsForCaller } from "@/lib/user-permissions";
+import { getAuthorizedStoreAdminId } from "@/lib/api-auth";
 
 const PERIOD_PATTERN = /^\d{4}-\d{2}$/;
-
-async function authorizeStore(authId: string, role: string, franchiseId: string) {
-  if (role !== "franchise_admin" || !mongoose.isValidObjectId(franchiseId)) {
-    return false;
-  }
-  const allowedIds = await getAllowedFranchiseIdsForCaller({ id: authId, role });
-  return allowedIds?.includes(franchiseId) ?? false;
-}
 
 export async function GET(request: NextRequest) {
   const auth = await getAuthInfo();
@@ -29,7 +21,7 @@ export async function GET(request: NextRequest) {
   }
 
   await connectToDatabase();
-  if (!(await authorizeStore(auth.id, auth.role, franchiseId))) {
+  if (!(await getAuthorizedStoreAdminId(auth, franchiseId))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
 
@@ -59,7 +51,7 @@ export async function POST(request: NextRequest) {
     days?: number;
   };
   const franchiseId = body.franchiseId ?? "";
-  if (!(await authorizeStore(auth.id, auth.role, franchiseId))) {
+  if (!(await getAuthorizedStoreAdminId(auth, franchiseId))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
   if (!body.employeeId || !mongoose.isValidObjectId(body.employeeId)) {

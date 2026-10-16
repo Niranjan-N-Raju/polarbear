@@ -1,5 +1,6 @@
 import { localDateValue } from "@/lib/date-utils";
 import type { ExpenseItem, SaleForm, SaleRecord } from "@/types/sales";
+export { currentMonthRange } from "@/lib/date-utils";
 
 export function todayISO(): string {
   return localDateValue();
@@ -9,16 +10,6 @@ export function addOneDay(date: string): string {
   const next = new Date(`${date}T00:00:00`);
   next.setDate(next.getDate() + 1);
   return localDateValue(next);
-}
-
-export function currentMonthRange(): { from: string; to: string } {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const from = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-  return { from, to };
 }
 
 export function todayRange(): { from: string; to: string } {

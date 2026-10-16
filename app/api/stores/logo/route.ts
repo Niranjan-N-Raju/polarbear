@@ -4,19 +4,13 @@ import Franchise from "@/models/Franchise";
 import { getAuthInfo } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
-import { getAllowedFranchiseIdsForCaller } from "@/lib/user-permissions";
+import { getAuthorizedStoreAdminId } from "@/lib/api-auth";
 import { auditLog } from "@/lib/audit-log";
 import { detectAllowedUploadType, parseFormDataWithLimit } from "@/lib/file-upload";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 // SVG is excluded: jsPDF's addImage (used for the slip PDF) only supports raster formats.
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-
-async function authorizeStore(authId: string, role: string, franchiseId: string) {
-  if (role !== "franchise_admin" || !mongoose.isValidObjectId(franchiseId)) return false;
-  const allowedIds = await getAllowedFranchiseIdsForCaller({ id: authId, role });
-  return allowedIds?.includes(franchiseId) ?? false;
-}
 
 function getBucket() {
   const database = mongoose.connection.db;
@@ -30,7 +24,7 @@ export async function GET(request: NextRequest) {
 
   const franchiseId = new URL(request.url).searchParams.get("franchiseId") ?? "";
   await connectToDatabase();
-  if (!(await authorizeStore(auth.id, auth.role, franchiseId))) {
+  if (!(await getAuthorizedStoreAdminId(auth, franchiseId))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
 
@@ -70,7 +64,7 @@ export async function POST(request: NextRequest) {
   const file = formData.get("file");
 
   await connectToDatabase();
-  if (!(await authorizeStore(auth.id, auth.role, franchiseId))) {
+  if (!(await getAuthorizedStoreAdminId(auth, franchiseId))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
   if (!(file instanceof File)) {
@@ -124,7 +118,7 @@ export async function DELETE(request: NextRequest) {
 
   const franchiseId = new URL(request.url).searchParams.get("franchiseId") ?? "";
   await connectToDatabase();
-  if (!(await authorizeStore(auth.id, auth.role, franchiseId))) {
+  if (!(await getAuthorizedStoreAdminId(auth, franchiseId))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
 

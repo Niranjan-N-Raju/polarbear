@@ -104,3 +104,57 @@ This follow-up preserves all existing cleanup changes. Next.js, strict TypeScrip
 | Components, styles, configuration | Shared components, design tokens, types and providers already exist | Preserve UI markup, accessibility and client/server boundaries; no broad folder reorganization or new state-management framework. |
 
 Verification will use focused tests for each extraction, followed by typecheck, lint, the test suite, production build, resolved-import/cycle checks, and a scoped diff review. The known pre-existing employee-form lint error remains outside this refactoring.
+
+### Stage B: Completed Refactoring
+
+| Common Code | Canonical Module | Consumers Updated |
+| --- | --- | --- |
+| Four matching current-month range functions | Added `currentMonthRange` to existing `lib/date-utils.ts` | `app/(app)/dashboard/hooks/useDashboardData.ts`, `app/(app)/sales/utils/index.ts`, `app/(app)/withdrawals/utils/index.ts`, `app/api/dashboard/route.ts` |
+| Two withdrawal payload interfaces and validators | New pure `lib/withdrawals/validation.ts`, following the existing domain validation pattern and reusing `WithdrawalRecord` through a type-only import | `app/api/withdrawals/route.ts`, `app/api/withdrawals/[id]/route.ts` |
+| Thirteen franchise-admin store authorization functions | Reused existing `lib/api-auth.ts:getAuthorizedStoreAdminId`, without modifying the canonical helper | Advances, extra-days, and incentives collection/item handlers; P&L collection/input handlers; salary collection/slip handlers; store branding/cycle/logo handlers |
+
+- Removed 19 local function implementations, replacing them with shared imports or compatibility re-exports. Four month-range copies now have one canonical implementation; two withdrawal validators now have one; thirteen authorization copies now use an existing helper.
+- Existing sales/withdrawals `currentMonthRange` exports remain available, so frontend callers keep their imports. No UI markup, hooks' state behavior, event handling, accessibility, or client directives changed.
+- Withdrawal payload validation preserves regex-only dates (including the prior acceptance of calendar-invalid but correctly formatted dates), positive finite amounts, allowed types, reason trimming/default/length rules, error messages, and error precedence.
+- Authorization retains franchise-admin-only access, ObjectId validation, assigned-store membership, failure propagation, and record-derived store identity on item routes. Database queries, connection timing, CSRF checks, status codes and response bodies remain in the route handlers.
+- Removed now-unused `mongoose` imports from P&L inputs, salary, store branding, and store cycle routes. Other database imports remain where used.
+- Extended existing `lib/date-utils.test.ts` with 4 month-boundary cases. Added `lib/withdrawals/validation.test.ts` (11 cases) and `lib/api-auth.test.ts` (13 cases). Permission tests mock the lookup; they do not access a database.
+- No additional source files were deleted in this follow-up. Prior cleanup deletions and all unrelated working-tree changes were preserved. No dependencies, configuration, environment values, schemas, or transaction semantics were changed.
+
+### Frontend, Performance and Boundaries
+
+- Shared local-calendar calculation is safe for both browser and server imports: `lib/date-utils.ts` has no server/browser-only dependencies.
+- The new withdrawal validator is pure and imports the domain record only with `import type`; it does not export database clients or privileged configuration.
+- Existing authorization code remains in its server API module. No client-facing barrel exports server functionality.
+- Feature request wrappers mostly delegate directly to native `fetch`. Withdrawal requests uniquely default to `cache: "no-store"` with caller overrides preserved; login retains its custom JSON/error handling. These wrappers were retained instead of adding an unnecessary generic forwarding layer.
+- No memoization, caching, request batching, redundant-query removal, state-management changes, or runtime performance improvement is claimed. The demonstrated benefit is fewer independently maintained rules and less coupling through duplicate implementations; no profiling was performed.
+
+### Stage C: Final Verification
+
+| Command / Check | Actual Result |
+| --- | --- |
+| `npm run typecheck` | Passed after each integration and at completion |
+| `npm run test:run` | Passed: 6 suites / 60 tests, including 28 new cases in this follow-up |
+| `npm run test:run -- lib/withdrawals/validation.test.ts` | Passed: 11 tests |
+| `npm run test:run -- lib/api-auth.test.ts` | Passed before and after route replacement: 13 tests |
+| `TZ=Asia/Kolkata npm run test:run -- lib/date-utils.test.ts` | Passed: 8 date tests |
+| `TZ=America/New_York npm run test:run -- lib/date-utils.test.ts` | Passed: 8 date tests |
+| `npm run lint` | Same pre-existing employee-form effect error; final run has zero warnings. Four intermediate unused-import warnings introduced by extraction were fixed and the check rerun. |
+| `tsc --noEmit --noUnusedLocals --noUnusedParameters --incremental false` | Final result: only pre-existing unused `request` at `app/api/users/[id]/route.ts:32` |
+| `npm run build` | Passed on Next.js 16.4.0; route list and Proxy presence unchanged |
+| `git diff --check` and active refactoring diff review | Passed whitespace check; changes limited to documented extractions/imports and preserved prior cleanup |
+| TypeScript AST/resolver graph scan | 243 source/config/test files, 588 local references; no unresolved local imports or detected runtime cycles |
+| Transitive client dependency scan | 52 client entry points; no detected database, Node API, `next/headers`, `server-only`, or private environment dependency reachable through local runtime imports |
+| HTTP handler comparison against Git HEAD, normalizing only the intended helper substitutions | 29 handlers across 16 route files; no unexpected body differences |
+| Editor diagnostics | No errors reported |
+
+The module graph scan excludes type-only edges and third-party internals; it is a static check, not a permanent enforcement mechanism or a proof about nonliteral runtime imports. The production build provides an additional framework boundary check.
+
+### Remaining Opportunities and Risks
+
+- Similar today/week range helpers and locale formatting may be consolidated later, with attention to Sunday/Monday week starts and different precision/format requirements.
+- Inventory authorization has a similar role/store rule but returns a boolean and belongs to its own data-access boundary. It was retained; no extra compatibility wrapper was introduced solely to reduce lines.
+- More substantial component/hook, form, query, or service consolidation needs dedicated behavioral coverage and, for performance work, profiling. Similar domain models are not interchangeable solely because their handlers look alike.
+- Existing lint and unused-parameter findings remain visible. No checks were weakened or errors suppressed.
+- No browser, database-backed integration, or authenticated end-to-end tests were executed. Security helper tests cover decisions with mocked membership data; live database behavior remains unverified.
+- The earlier cleanup sections describe their original stage outcomes; this follow-up supersedes their deferred status for month ranges, withdrawal payload validation, and the 13 extracted authorization functions.

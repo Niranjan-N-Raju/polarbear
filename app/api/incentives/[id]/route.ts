@@ -4,15 +4,7 @@ import Incentive from "@/models/Incentive";
 import { getAuthInfo } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
-import { getAllowedFranchiseIdsForCaller } from "@/lib/user-permissions";
-
-async function authorizeStore(authId: string, role: string, franchiseId: string) {
-  if (role !== "franchise_admin" || !mongoose.isValidObjectId(franchiseId)) {
-    return false;
-  }
-  const allowedIds = await getAllowedFranchiseIdsForCaller({ id: authId, role });
-  return allowedIds?.includes(franchiseId) ?? false;
-}
+import { getAuthorizedStoreAdminId } from "@/lib/api-auth";
 
 export async function PUT(
   request: NextRequest,
@@ -44,7 +36,7 @@ export async function PUT(
   if (!incentive) {
     return NextResponse.json({ message: "Incentive not found." }, { status: 404 });
   }
-  if (!(await authorizeStore(auth.id, auth.role, String(incentive.franchise)))) {
+  if (!(await getAuthorizedStoreAdminId(auth, String(incentive.franchise)))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
 
@@ -74,7 +66,7 @@ export async function DELETE(
   if (!incentive) {
     return NextResponse.json({ message: "Incentive not found." }, { status: 404 });
   }
-  if (!(await authorizeStore(auth.id, auth.role, String(incentive.franchise)))) {
+  if (!(await getAuthorizedStoreAdminId(auth, String(incentive.franchise)))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
 

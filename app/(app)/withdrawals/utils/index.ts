@@ -1,5 +1,6 @@
 import { localDateValue } from "@/lib/date-utils";
 import type { WithdrawalForm, WithdrawalRecord } from "@/types/withdrawals";
+export { currentMonthRange } from "@/lib/date-utils";
 
 export const WITHDRAWAL_TYPE_OPTIONS = [
   { value: "withdrawal" as const, label: "Withdrawal" },
@@ -8,16 +9,6 @@ export const WITHDRAWAL_TYPE_OPTIONS = [
 
 export function todayISO(): string {
   return localDateValue();
-}
-
-export function currentMonthRange(): { from: string; to: string } {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const from = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  const to = `${year}-${String(month + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-  return { from, to };
 }
 
 export function toNumber(value: string): number {
