@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { focusFirstInvalidField } from "@/app/components/form-validation";
 import { login } from "../apicall/login";
 import { getSafeNextPath, validateLoginForm } from "../utils/login";
 
 export function useLogin() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +33,7 @@ export function useLogin() {
       const storedNext = getSafeNextPath(globalThis.window.sessionStorage.getItem("em_return_to"));
       globalThis.window.sessionStorage.removeItem("em_return_to");
       globalThis.window.sessionStorage.setItem("em_login_success_toast", "1");
-      router.push(queryNext ?? storedNext ?? "/dashboard");
+      globalThis.window.location.replace(queryNext ?? storedNext ?? "/dashboard");
       return;
     }
 
