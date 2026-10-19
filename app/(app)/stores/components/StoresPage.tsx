@@ -7,6 +7,7 @@ import {
   MapPinIcon,
   PhoneIcon,
   ArchiveIcon,
+  RestoreIcon,
   PencilIcon,
 } from "@/app/components/icons";
 import { useToast } from "@/app/hooks/useToast";
@@ -615,7 +616,9 @@ export default function StoresPage() {
                     className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-brand-orange transition hover:text-brand-orange/90 disabled:cursor-not-allowed disabled:opacity-60"
                     aria-label={`${store.archivedAt ? "Restore" : "Archive"} ${store.name}`}
                   >
-                    <ArchiveIcon className="h-3.5 w-3.5" />
+                    {store.archivedAt
+                      ? <RestoreIcon className="h-3.5 w-3.5" />
+                      : <ArchiveIcon className="h-3.5 w-3.5" />}
                     {archivingId === store._id ? "Saving..." : store.archivedAt ? "Restore" : "Archive"}
                   </button>
                 </div>
