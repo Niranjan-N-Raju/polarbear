@@ -27,6 +27,7 @@ export { PhoneIcon } from "./PhoneIcon";
 export { CopyIcon } from "./CopyIcon";
 export { CakeIcon } from "./CakeIcon";
 export { ArchiveIcon } from "./ArchiveIcon";
+export { RestoreIcon } from "./RestoreIcon";
 export { SalaryIcon } from "./SalaryIcon";
 export { SettingsIcon } from "./SettingsIcon";
 export { InventoryIcon } from "./InventoryIcon";
