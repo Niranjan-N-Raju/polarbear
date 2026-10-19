@@ -31,6 +31,7 @@ export interface IFranchise extends Document {
   salaryCycleEndDay?: number;
   salaryCycleConfiguredAt?: Date;
   isActive: boolean;
+  archivedAt?: Date;
   createdBy?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -90,6 +91,7 @@ const FranchiseSchema: Schema<IFranchise> = new Schema(
     salaryCycleEndDay: { type: Number, min: 1, max: 31 },
     salaryCycleConfiguredAt: { type: Date },
     isActive: { type: Boolean, default: true },
+    archivedAt: { type: Date },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true },

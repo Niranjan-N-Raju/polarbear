@@ -12,6 +12,7 @@ export interface Store {
   ownerEmail?: string;
   storeType: StoreType;
   isActive: boolean;
+  archivedAt?: string;
   createdBy?: string;
 }
 
