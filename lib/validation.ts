@@ -150,6 +150,10 @@ export const createStoreBodySchema = z.object({
   ),
 });
 
+export const storeArchiveBodySchema = z.object({
+  archived: z.boolean(),
+});
+
 /** Update profile request body schema */
 export const updateProfileBodySchema = z.object({
   name: nameSchema.optional(),

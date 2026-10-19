@@ -6,7 +6,7 @@ import {
   StoresIcon,
   MapPinIcon,
   PhoneIcon,
-  TrashIcon,
+  ArchiveIcon,
   PencilIcon,
 } from "@/app/components/icons";
 import { useToast } from "@/app/hooks/useToast";
@@ -33,7 +33,7 @@ export default function StoresPage() {
   const [formErrors, setFormErrors] = useState<StoreFormErrors>({});
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
   const suppressEditQueryRef = useRef(false);
   const { error, success } = useToast();
 
@@ -177,27 +177,29 @@ export default function StoresPage() {
     router.push(`/stores?edit=${encodeURIComponent(store._id)}`);
   }
 
-  async function handleDelete(store: Store) {
-    if (!window.confirm(`Delete ${store.name}? This action cannot be undone.`)) {
+  async function handleArchive(store: Store, archived: boolean) {
+    if (archived && !window.confirm(`Archive ${store.name}? It can be restored later.`)) {
       return;
     }
 
-    setDeletingId(store._id);
+    setArchivingId(store._id);
     try {
-      const res = await storesRequest(`/api/stores?id=${encodeURIComponent(store._id)}`, {
-        method: "DELETE",
+      const res = await storesRequest(`/api/stores/archive?id=${encodeURIComponent(store._id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived }),
       });
       const data = (await res.json()) as { message?: string };
       if (res.ok) {
-        success("Store deleted successfully.");
-        setStores((current) => current.filter(({ _id }) => _id !== store._id));
+        success(archived ? "Store archived successfully." : "Store restored successfully.");
+        await loadStores();
       } else {
-        error(data.message ?? "Failed to delete store.");
+        error(data.message ?? (archived ? "Failed to archive store." : "Failed to restore store."));
       }
     } catch {
-      error("Failed to delete store.");
+      error(archived ? "Failed to archive store." : "Failed to restore store.");
     } finally {
-      setDeletingId(null);
+      setArchivingId(null);
     }
   }
 
@@ -568,12 +570,12 @@ export default function StoresPage() {
                     />
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        store.isActive
+                        store.isActive && !store.archivedAt
                           ? "bg-[#E8E4D7] text-brand-teal"
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
-                      {store.isActive ? "Active" : "Inactive"}
+                      {store.archivedAt ? "Archived" : store.isActive ? "Active" : "Inactive"}
                     </span>
                   </div>
                 </div>
@@ -600,7 +602,7 @@ export default function StoresPage() {
                   <button
                     type="button"
                     onClick={() => handleEdit(store)}
-                    disabled={deletingId === store._id || saving}
+                    disabled={archivingId === store._id || saving}
                     className="cursor-pointer text-xs font-medium text-brand-teal transition hover:text-brand-sky disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <PencilIcon className="mr-1 inline-block h-3.5 w-3.5 text-brand-teal" />
@@ -608,13 +610,13 @@ export default function StoresPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => void handleDelete(store)}
-                    disabled={deletingId === store._id}
-                    className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-red-600 transition hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                    aria-label={`Delete ${store.name}`}
+                    onClick={() => void handleArchive(store, !store.archivedAt)}
+                    disabled={archivingId === store._id}
+                    className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-brand-orange transition hover:text-brand-orange/90 disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-label={`${store.archivedAt ? "Restore" : "Archive"} ${store.name}`}
                   >
-                    <TrashIcon className="h-3.5 w-3.5" />
-                    {deletingId === store._id ? "Deleting..." : "Delete"}
+                    <ArchiveIcon className="h-3.5 w-3.5" />
+                    {archivingId === store._id ? "Saving..." : store.archivedAt ? "Restore" : "Archive"}
                   </button>
                 </div>
               )}
