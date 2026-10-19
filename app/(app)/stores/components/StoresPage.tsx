@@ -22,6 +22,9 @@ import { EMPTY_STORE_FORM as emptyForm, validateStoreForm } from "../utils";
 import { StoreTypeBadge } from "./StoreTypeBadge";
 import StoreFormModal from "./StoreFormModal";
 
+type StoreStatusFilter = "active" | "archived" | "all";
+type StoreTypeFilter = "all" | "company" | "franchise";
+
 export default function StoresPage() {
   const router = useRouter();
   useEffect(() => { document.title = "Store Management · Polar Bear"; }, []);
@@ -35,8 +38,20 @@ export default function StoresPage() {
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
   const [archivingId, setArchivingId] = useState<string | null>(null);
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StoreStatusFilter>("active");
+  const [typeFilter, setTypeFilter] = useState<StoreTypeFilter>("all");
   const suppressEditQueryRef = useRef(false);
   const { error, success } = useToast();
+
+  const normalizedSearch = searchText.trim().toLocaleLowerCase();
+  const visibleStores = stores.filter((store) => {
+    const archived = Boolean(store.archivedAt) || !store.isActive;
+    const matchesStatus = statusFilter === "all" || (statusFilter === "archived" ? archived : !archived);
+    const matchesType = typeFilter === "all" || store.storeType === typeFilter;
+    const matchesSearch = !normalizedSearch || `${store.name} ${store.storeCode}`.toLocaleLowerCase().includes(normalizedSearch);
+    return matchesStatus && matchesType && matchesSearch;
+  });
 
   const openEditForm = useCallback((store: Store) => {
     setEditingStoreId(store._id);
@@ -179,7 +194,9 @@ export default function StoresPage() {
   }
 
   async function handleArchive(store: Store, archived: boolean) {
-    if (archived && !window.confirm(`Archive ${store.name}? It can be restored later.`)) {
+    const action = archived ? "Archive" : "Restore";
+    const details = archived ? "It can be restored later." : "It will return to active stores.";
+    if (!window.confirm(`${action} ${store.name}? ${details}`)) {
       return;
     }
 
@@ -230,6 +247,49 @@ export default function StoresPage() {
           {showForm ? "Cancel" : "+ Add Store"}
         </button>
       </div>
+
+      {!showForm && stores.length > 0 && (
+        <div className="mb-5 flex flex-col gap-3 rounded-xl border border-brand-beige bg-white p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-center">
+          <label className="min-w-52 flex-1">
+            <span className="sr-only">Search stores or codes</span>
+            <input
+              type="search"
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              placeholder="Search stores or codes"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-orange focus:outline-none focus:ring-1 focus:ring-brand-orange"
+            />
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-xs font-medium text-gray-500">Status</span>
+            {(["active", "archived", "all"] as const).map((status) => (
+              <button
+                key={status}
+                type="button"
+                aria-pressed={statusFilter === status}
+                onClick={() => setStatusFilter(status)}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${statusFilter === status ? "border-brand-teal/30 bg-brand-teal/10 text-brand-teal" : "border-brand-beige text-gray-600 hover:bg-brand-sand/40"}`}
+              >
+                {status === "active" ? "Active" : status === "archived" ? "Archived" : "All"}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-xs font-medium text-gray-500">Type</span>
+            {(["all", "company", "franchise"] as const).map((storeType) => (
+              <button
+                key={storeType}
+                type="button"
+                aria-pressed={typeFilter === storeType}
+                onClick={() => setTypeFilter(storeType)}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${typeFilter === storeType ? "border-brand-teal/30 bg-brand-teal/10 text-brand-teal" : "border-brand-beige text-gray-600 hover:bg-brand-sand/40"}`}
+              >
+                {storeType === "all" ? "All types" : storeType === "company" ? "Company" : "Franchise"}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Add/edit store form */}
       {showForm && <StoreFormModal
@@ -543,9 +603,14 @@ export default function StoresPage() {
               </p>
             </div>
           )}
-          {!loading && stores.length > 0 && (
+          {!loading && stores.length > 0 && visibleStores.length === 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
+              <p className="text-gray-500 text-sm">No stores match these filters.</p>
+            </div>
+          )}
+          {!loading && visibleStores.length > 0 && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {stores.map((store) => (
+          {visibleStores.map((store) => (
             <div
               key={store._id}
               className="bg-white rounded-xl border border-gray-200 p-5 space-y-3"
