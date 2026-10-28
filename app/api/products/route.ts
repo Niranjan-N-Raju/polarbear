@@ -3,8 +3,19 @@ import { readJsonObject } from "@/lib/request-json";
 import { NextRequest, NextResponse } from "next/server";
 import { validateCsrf } from "@/lib/csrf";
 import { getInventoryClient, getInventoryDatabase } from "@/lib/inventory-db";
-import { getStoreAccess } from "@/lib/api-auth";
+import { getStoreAccess, requireAuth } from "@/lib/api-auth";
 import { normalizeProductName } from "@/lib/inventory/validation";
+
+// The product catalogue is shared by every store, so writes are limited to global admins
+// (matching the backend's requireRole('admin')); store admins may only read it.
+async function requireCatalogueAdmin(): Promise<NextResponse | null> {
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  if (auth.role !== "admin") {
+    return NextResponse.json({ message: "Only administrators can change the shared product catalogue." }, { status: 403 });
+  }
+  return null;
+}
 
 export async function GET(request: NextRequest) {
   const access = await getStoreAccess(request);
@@ -24,8 +35,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
-  const access = await getStoreAccess(request);
-  if ("response" in access) return access.response;
+  const forbidden = await requireCatalogueAdmin();
+  if (forbidden) return forbidden;
   const jsonBody = await readJsonObject<{ name?: unknown }>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
@@ -63,8 +74,8 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
-  const access = await getStoreAccess(request);
-  if ("response" in access) return access.response;
+  const forbidden = await requireCatalogueAdmin();
+  if (forbidden) return forbidden;
   const jsonBody = await readJsonObject<{ productId?: string; name?: unknown }>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
@@ -107,8 +118,8 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
-  const access = await getStoreAccess(request);
-  if ("response" in access) return access.response;
+  const forbidden = await requireCatalogueAdmin();
+  if (forbidden) return forbidden;
   const jsonBody = await readJsonObject<{ productId?: string }>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;

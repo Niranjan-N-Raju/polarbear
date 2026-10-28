@@ -83,9 +83,20 @@ describe("createUserBodySchema", () => {
       email: "john@example.com",
       password: "Str0ngP@ssword!",
       role: "employee",
-      franchiseIds: ["abc123"],
+      franchiseIds: ["507f1f77bcf86cd799439011"],
     });
     expect(result.success).toBe(true);
+  });
+
+  it("rejects store ids that are not valid ObjectIds", () => {
+    const result = createUserBodySchema.safeParse({
+      name: "John Doe",
+      email: "john@example.com",
+      password: "Str0ngP@ssword!",
+      role: "employee",
+      franchiseIds: ["abc123"],
+    });
+    expect(result.success).toBe(false);
   });
 
   it("rejects name exceeding max length", () => {
