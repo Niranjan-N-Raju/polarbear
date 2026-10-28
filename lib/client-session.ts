@@ -10,15 +10,22 @@ export async function logoutAndRedirectToLogin(
   const shouldRememberReturnTo = reason === "inactive";
 
   // Use sessionStorage instead of localStorage to reduce XSS exposure.
-  // sessionStorage is cleared when the tab closes.
-  if (shouldRememberReturnTo) {
-    globalThis.sessionStorage.setItem("em_return_to", returnTo);
-  } else {
-    globalThis.sessionStorage.removeItem("em_return_to");
+  // sessionStorage is cleared when the tab closes. Storage can throw (private mode,
+  // blocked storage); that must never prevent the logout request or redirect.
+  try {
+    if (shouldRememberReturnTo) {
+      globalThis.sessionStorage.setItem("em_return_to", returnTo);
+    } else {
+      globalThis.sessionStorage.removeItem("em_return_to");
+    }
+  } catch {
+    // Ignore storage failures.
   }
 
   try {
     await fetch("/api/auth/logout", { method: "POST" });
+  } catch {
+    // Network failure: still send the user to the login page.
   } finally {
     const loginUrl = new URL("/login", globalThis.location.origin);
     if (shouldRememberReturnTo) {
