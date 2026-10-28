@@ -1,3 +1,5 @@
+import { appFetch } from "@/lib/api-client";
+
 export function dashboardRequest(input: RequestInfo | URL, init?: RequestInit) {
-  return fetch(input, init);
+  return appFetch(input, init);
 }

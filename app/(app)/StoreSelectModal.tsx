@@ -1,5 +1,6 @@
 "use client";
 
+import { appFetch } from "@/lib/api-client";
 import { useEffect, useRef, useState } from "react";
 import {
   CheckIcon,
@@ -83,7 +84,7 @@ export default function StoreSelectModal({
       setLoading(true);
       setLoadFailed(false);
       setFranchises([]);
-      fetch("/api/stores")
+      appFetch("/api/stores")
         .then((r) => r.json())
         .then((data: { franchises?: StoreSelectFranchise[] }) => {
           setFranchises(data.franchises ?? []);
@@ -100,7 +101,7 @@ export default function StoreSelectModal({
   async function handleSelect(franchise: StoreSelectFranchise) {
     setSelecting(franchise._id);
     try {
-      const res = await fetch("/api/stores/select", {
+      const res = await appFetch("/api/stores/select", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -20,4 +20,5 @@ export interface CurrentUser {
   name: string;
   email: string;
   role: UserRole;
+  mustChangePassword?: boolean;
 }

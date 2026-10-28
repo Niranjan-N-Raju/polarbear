@@ -1,5 +1,6 @@
 "use client";
 
+import { appFetch } from "@/lib/api-client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Sidebar from "./Sidebar";
@@ -55,7 +56,7 @@ export default function AppShell({
 
   useEffect(() => {
     if (!needsStore) return;
-    fetch("/api/stores")
+    appFetch("/api/stores")
       .then((r) => r.json())
       .then((data: { franchises?: unknown[] }) => {
         setStoreCount((data.franchises ?? []).length);
@@ -73,7 +74,7 @@ export default function AppShell({
 
     async function checkFranchises() {
       try {
-        const res = await fetch("/api/stores");
+        const res = await appFetch("/api/stores");
         if (!res.ok) {
           setModalOpen(true);
           return;
@@ -86,7 +87,7 @@ export default function AppShell({
         if (list.length === 1) {
           // Only one franchise — select it automatically, no popup needed
           const f = list[0];
-          const selectRes = await fetch("/api/stores/select", {
+          const selectRes = await appFetch("/api/stores/select", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

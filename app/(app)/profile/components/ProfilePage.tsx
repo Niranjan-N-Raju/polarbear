@@ -23,6 +23,13 @@ export default function ProfilePage() {
   useEffect(() => { document.title = "Profile · Polar Bear"; }, []);
   const [me, setMe] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
+  // Set when the account must replace an admin-issued password before using the app.
+  // Markup is identical during hydration (loading spinner), so reading the URL here is safe.
+  const [mustChangePassword, setMustChangePassword] = useState(
+    () =>
+      typeof globalThis.location !== "undefined" &&
+      new URLSearchParams(globalThis.location.search).get("passwordChangeRequired") === "1",
+  );
 
   // Name form
   const [name, setName] = useState("");
@@ -55,7 +62,9 @@ export default function ProfilePage() {
         if ("message" in data) return;
         setMe(data);
         setName(data.name);
+        if (data.mustChangePassword) setMustChangePassword(true);
       })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -142,6 +151,11 @@ export default function ProfilePage() {
       setShowNewPw(false);
       setShowConfirmPw(false);
       success("Password updated successfully.");
+      if (mustChangePassword) {
+        // Reload into the full app with the newly issued session.
+        globalThis.location.assign("/dashboard");
+        return;
+      }
     } catch {
       error("Network error. Please try again.");
       // Clear all fields on network error
@@ -176,6 +190,18 @@ export default function ProfilePage() {
           Manage your account details
         </p>
       </div>
+
+      {mustChangePassword && (
+        <div
+          role="alert"
+          className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+        >
+          <p className="font-semibold">You must change your password before continuing.</p>
+          <p className="mt-1">
+            Your password was set by an administrator. Choose a new password below to unlock the rest of the app.
+          </p>
+        </div>
+      )}
 
       {/* Two-column layout: left = identity card + update name, right = change password */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
