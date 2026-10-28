@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import Franchise from "@/models/Franchise";
-import { getAuthInfo } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
-import { getAuthorizedStoreAdminId } from "@/lib/api-auth";
+import { getAuthorizedStoreAdminId, requireAuth } from "@/lib/api-auth";
 import { isValidPeriod, getCycleRange, resolveCycleSettings } from "@/lib/salary-cycle";
 
 export async function GET(request: NextRequest) {
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const params = new URL(request.url).searchParams;
   const franchiseId = params.get("franchiseId") ?? "";

@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Synthetic placeholders: lib/mongodb.ts validates these at import; tests never connect.
+      MONGODB_URI: mongodb://127.0.0.1:27017/ci-not-used
+      MONGODB_DB: ci-not-used
+      JWT_SECRET: ci-only-placeholder-secret-not-used-anywhere-0123456789
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx vitest run
+      # Fail on high/critical advisories in runtime dependencies only.
+      - run: npm audit --omit=dev --audit-level=high

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject } from "@/lib/request-json";
 import Franchise from "@/models/Franchise";
 import User from "@/models/User";
 import { connectToDatabase } from "@/lib/mongodb";
@@ -30,7 +31,9 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ message: "You are not allowed to configure positions." }, { status: 403 });
   }
 
-  const body = (await request.json()) as { franchiseId?: string; positions?: unknown };
+  const jsonBody = await readJsonObject<{ franchiseId?: string; positions?: unknown }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const franchiseId = await getAuthorizedStoreId(auth, body.franchiseId);
   if (!franchiseId || !Array.isArray(body.positions) || body.positions.length > 30) {
     return NextResponse.json({ message: "A valid store and up to 30 positions are required." }, { status: 400 });

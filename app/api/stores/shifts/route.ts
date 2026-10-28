@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { readJsonObject } from "@/lib/request-json";
 import { NextRequest, NextResponse } from "next/server";
 import Franchise from "@/models/Franchise";
 import WeeklyRoster from "@/models/WeeklyRoster";
@@ -32,10 +33,12 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ message: "You are not allowed to configure shifts." }, { status: 403 });
   }
 
-  const body = (await request.json()) as {
+  const jsonBody = await readJsonObject<{
     franchiseId?: string;
     shifts?: Array<{ id?: string; name?: string; startTime?: string; endTime?: string }>;
-  };
+  }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const franchiseId = await getAuthorizedStoreId(authResult, body.franchiseId);
   if (!franchiseId || !Array.isArray(body.shifts) || body.shifts.length > 20) {
     return NextResponse.json({ message: "A valid store and up to 20 shifts are required." }, { status: 400 });

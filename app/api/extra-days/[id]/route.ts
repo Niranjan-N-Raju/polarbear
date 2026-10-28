@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
+import { readJsonObject } from "@/lib/request-json";
 import { NextRequest, NextResponse } from "next/server";
 import ExtraDay from "@/models/ExtraDay";
-import { getAuthInfo } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
-import { getAuthorizedStoreAdminId } from "@/lib/api-auth";
+import { getAuthorizedStoreAdminId, requireAuth } from "@/lib/api-auth";
 
 export async function PUT(
   request: NextRequest,
@@ -13,15 +13,17 @@ export async function PUT(
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
   if (!mongoose.isValidObjectId(id)) {
     return NextResponse.json({ message: "A valid extra day id is required." }, { status: 400 });
   }
 
-  const body = (await request.json()) as { type?: string; days?: number };
+  const jsonBody = await readJsonObject<{ type?: string; days?: number }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const type = (body.type ?? "").trim();
   const days = Number(body.days);
   if (!type) {
@@ -53,8 +55,8 @@ export async function DELETE(
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
   if (!mongoose.isValidObjectId(id)) {

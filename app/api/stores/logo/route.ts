@@ -1,10 +1,9 @@
 import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 import Franchise from "@/models/Franchise";
-import { getAuthInfo } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
-import { getAuthorizedStoreAdminId } from "@/lib/api-auth";
+import { getAuthorizedStoreAdminId, requireAuth } from "@/lib/api-auth";
 import { auditLog } from "@/lib/audit-log";
 import { detectAllowedUploadType, parseFormDataWithLimit } from "@/lib/file-upload";
 
@@ -19,8 +18,8 @@ function getBucket() {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const franchiseId = new URL(request.url).searchParams.get("franchiseId") ?? "";
   await connectToDatabase();
@@ -53,8 +52,8 @@ export async function POST(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const formData = await parseFormDataWithLimit(request, MAX_FILE_SIZE + 64 * 1024);
   if (!formData) {
@@ -113,8 +112,8 @@ export async function DELETE(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const franchiseId = new URL(request.url).searchParams.get("franchiseId") ?? "";
   await connectToDatabase();

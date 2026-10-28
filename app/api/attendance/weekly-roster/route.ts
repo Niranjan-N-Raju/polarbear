@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { readJsonObject } from "@/lib/request-json";
 import { NextRequest, NextResponse } from "next/server";
 import WeeklyRoster from "@/models/WeeklyRoster";
 import Franchise from "@/models/Franchise";
@@ -120,14 +121,16 @@ export async function PUT(request: NextRequest) {
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) return authResult;
 
-  const body = (await request.json()) as {
+  const jsonBody = await readJsonObject<{
     franchiseId?: string;
     weekStart?: string;
     entries?: Array<{
       employeeId?: string;
       days?: Array<{ date?: string; shift?: string }>;
     }>;
-  };
+  }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const franchiseId = await getAuthorizedStoreAdminId(authResult, body.franchiseId);
   const weekStart = body.weekStart ?? "";
   if (!franchiseId || !validWeekStart(weekStart) || !Array.isArray(body.entries) || body.entries.length > 500) {

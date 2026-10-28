@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject } from "@/lib/request-json";
 import Attendance from "@/models/Attendance";
 import Franchise from "@/models/Franchise";
 import User from "@/models/User";
 import Incentive from "@/models/Incentive";
 import ExtraDay from "@/models/ExtraDay";
 import Advance from "@/models/Advance";
-import { getAuthInfo } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
-import { getAuthorizedStoreAdminId } from "@/lib/api-auth";
+import { getAuthorizedStoreAdminId, requireAuth } from "@/lib/api-auth";
 import { auditLog } from "@/lib/audit-log";
 import { isValidPeriod, localDateValue, getCycleRange, resolveCycleSettings, roundCurrency } from "@/lib/salary-cycle";
 import { datesBetween as enumerateDates } from "@/lib/date-utils";
 
 export async function GET(request: NextRequest) {
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const params = new URL(request.url).searchParams;
   const franchiseId = params.get("franchiseId") ?? "";
@@ -158,13 +158,15 @@ export async function PUT(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  const body = (await request.json()) as {
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const jsonBody = await readJsonObject<{
     franchiseId?: string;
     cycleType?: "calendar_month" | "custom";
     startDay?: number;
-  };
+  }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const franchiseId = body.franchiseId ?? "";
   const isCalendarMonth = body.cycleType === "calendar_month";
   if (

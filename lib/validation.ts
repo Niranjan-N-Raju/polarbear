@@ -68,6 +68,24 @@ const optionalPanSchema = z
     "PAN must be 5 letters, 4 digits, and 1 letter.",
   );
 
+const OBJECT_ID_PATTERN = /^[a-f\d]{24}$/i;
+const franchiseIdsSchema = z
+  .array(z.string().regex(OBJECT_ID_PATTERN, "Invalid store id."))
+  .max(50)
+  .optional();
+
+/** True when value is a finite number with at most 2 decimal places. */
+export function hasAtMostTwoDecimals(value: number): boolean {
+  if (!Number.isFinite(value)) return false;
+  return Math.abs(Math.round(value * 100) - value * 100) < 1e-6;
+}
+
+/** Positive money amount with at most 2 decimals. */
+const salarySchema = z
+  .number()
+  .positive("Salary must be greater than zero.")
+  .refine(hasAtMostTwoDecimals, "Salary can have at most 2 decimal places.");
+
 /** Store code */
 export const storeCodeSchema = z
   .string()
@@ -110,7 +128,7 @@ export const createUserBodySchema = z.object({
   role: z
     .enum(["admin", "sub_admin", "franchise_admin", "employee"])
     .optional(),
-  franchiseIds: z.array(z.string().max(50)).max(50).optional(),
+  franchiseIds: franchiseIdsSchema,
   phone: phoneSchema,
   position: z.string().trim().min(1).max(60).optional(),
   employmentType: z.enum(["full_time", "part_time"]).optional(),
@@ -121,7 +139,7 @@ export const createUserBodySchema = z.object({
   dobInRecords: dateStringSchema,
   aadharNumber: optionalAadharSchema,
   panNumber: optionalPanSchema,
-  salary: z.number().positive("Salary must be greater than zero.").optional(),
+  salary: salarySchema.optional(),
   bankAccountNumber: optionalDigitsSchema(
     "Account number must contain digits only.",
   ),
@@ -167,7 +185,7 @@ export const patchUserBodySchema = z.object({
   role: z
     .enum(["admin", "sub_admin", "franchise_admin", "employee"])
     .optional(),
-  franchiseIds: z.array(z.string().max(50)).max(50).optional(),
+  franchiseIds: franchiseIdsSchema,
   phone: phoneSchema,
   position: z.string().trim().min(1).max(60).optional(),
   employmentType: z.enum(["full_time", "part_time"]).optional(),
@@ -176,10 +194,12 @@ export const patchUserBodySchema = z.object({
   emergencyContactRelationship: shortTextSchema(50),
   actualDob: dateStringSchema,
   dobInRecords: dateStringSchema,
-  aadharNumber: shortTextSchema(30),
-  panNumber: shortTextSchema(20),
-  salary: z.number().positive("Salary must be greater than zero.").optional(),
-  bankAccountNumber: shortTextSchema(30),
+  aadharNumber: optionalAadharSchema,
+  panNumber: optionalPanSchema,
+  salary: salarySchema.optional(),
+  bankAccountNumber: optionalDigitsSchema(
+    "Account number must contain digits only.",
+  ),
   bankName: shortTextSchema(100),
   bankIfsc: shortTextSchema(20),
   bankBranch: shortTextSchema(100),

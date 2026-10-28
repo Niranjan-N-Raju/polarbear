@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject } from "@/lib/request-json";
 import mongoose from "mongoose";
 import Attendance, { type AttendanceStatus } from "@/models/Attendance";
 import WeeklyRoster from "@/models/WeeklyRoster";
@@ -85,11 +86,13 @@ export async function PUT(request: NextRequest) {
   if (authResult instanceof NextResponse) return authResult;
   const auth = authResult;
 
-  const body = (await request.json()) as {
+  const jsonBody = await readJsonObject<{
     franchiseId?: string;
     date?: string;
     records?: Array<{ employeeId?: string; status?: string; comment?: string }>;
-  };
+  }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const franchiseId = await getAuthorizedStoreAdminId(auth, body.franchiseId ?? null);
   if (!franchiseId || !body.date || !DATE_PATTERN.test(body.date) || !Array.isArray(body.records)) {
     return NextResponse.json({ message: "A valid store, date, and records are required." }, { status: 400 });

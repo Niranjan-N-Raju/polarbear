@@ -20,6 +20,7 @@ export default function AppShell({
   initialFranchiseName,
   userRole,
   userName,
+  mustChangePassword = false,
 }: Readonly<AppShellProps>) {
   const router = useRouter();
   const pathname = usePathname();
@@ -36,7 +37,8 @@ export default function AppShell({
     useState(initialFranchiseName);
   // True while we're auto-checking/selecting on first load (no franchise cookie yet)
   // Global admins never need a store — skip entirely
-  const needsStore = userRole !== "admin" && userRole !== "sub_admin";
+  // Accounts that must change their password cannot use store APIs yet.
+  const needsStore = !mustChangePassword && userRole !== "admin" && userRole !== "sub_admin";
   const [autoSelecting, setAutoSelecting] = useState(
     !franchiseId && needsStore,
   );

@@ -18,6 +18,7 @@ export default async function AppLayout({
       initialFranchiseName={franchiseName}
       userRole={auth.role}
       userName={auth.name ?? ""}
+      mustChangePassword={auth.mustChangePassword === true}
     >
       {children}
     </AppShell>

@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { readJsonObject } from "@/lib/request-json";
 import { NextRequest, NextResponse } from "next/server";
 import { validateCsrf } from "@/lib/csrf";
 import { getInventoryClient, getInventoryDatabase } from "@/lib/inventory-db";
@@ -25,7 +26,9 @@ export async function POST(request: NextRequest) {
   if (csrfError) return csrfError;
   const access = await getStoreAccess(request);
   if ("response" in access) return access.response;
-  const body = (await request.json()) as { name?: unknown };
+  const jsonBody = await readJsonObject<{ name?: unknown }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const names = typeof body.name === "string"
     ? body.name.split(",").map((value) => value.trim()).filter(Boolean)
     : [];
@@ -62,7 +65,9 @@ export async function PATCH(request: NextRequest) {
   if (csrfError) return csrfError;
   const access = await getStoreAccess(request);
   if ("response" in access) return access.response;
-  const body = (await request.json()) as { productId?: string; name?: unknown };
+  const jsonBody = await readJsonObject<{ productId?: string; name?: unknown }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const normalizedName = normalizeProductName(name);
   if (!body.productId || !ObjectId.isValid(body.productId) || !name || name.length > 100) {
@@ -104,7 +109,9 @@ export async function DELETE(request: NextRequest) {
   if (csrfError) return csrfError;
   const access = await getStoreAccess(request);
   if ("response" in access) return access.response;
-  const body = (await request.json()) as { productId?: string };
+  const jsonBody = await readJsonObject<{ productId?: string }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   if (!body.productId || !ObjectId.isValid(body.productId)) {
     return NextResponse.json({ message: "A valid product is required." }, { status: 400 });
   }

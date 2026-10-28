@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject } from "@/lib/request-json";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import Franchise from "@/models/Franchise";
-import { getAuthInfo } from "@/lib/auth";
+import { requireAuth } from "@/lib/api-auth";
 import { validateCsrf } from "@/lib/csrf";
 import { auditLog } from "@/lib/audit-log";
-import { parseBodyWithLimit, storeArchiveBodySchema } from "@/lib/validation";
+import { storeArchiveBodySchema } from "@/lib/validation";
 
 /** PATCH /api/stores/archive?id=... — archive or restore a store created by the caller */
 export async function PATCH(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   if (auth.role !== "admin" && auth.role !== "sub_admin") {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
@@ -23,10 +24,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ message: "A valid store id is required." }, { status: 400 });
   }
 
-  const rawBody = await parseBodyWithLimit(request, 10_000);
-  if (rawBody === null) {
-    return NextResponse.json({ message: "Request body too large." }, { status: 413 });
-  }
+  const jsonBody = await readJsonObject(request, 10_000);
+  if (jsonBody.response) return jsonBody.response;
+  const rawBody = jsonBody.body;
   const parsed = storeArchiveBodySchema.safeParse(rawBody);
   if (!parsed.success) {
     return NextResponse.json({ message: parsed.error.issues[0]?.message ?? "Invalid input." }, { status: 400 });

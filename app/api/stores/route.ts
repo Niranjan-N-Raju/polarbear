@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject } from "@/lib/request-json";
 import mongoose from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import Franchise from "@/models/Franchise";
-import { getAuthInfo } from "@/lib/auth";
+import { requireAuth } from "@/lib/api-auth";
 import { validateCsrf } from "@/lib/csrf";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
-import { createStoreBodySchema, parseBodyWithLimit } from "@/lib/validation";
+import { createStoreBodySchema } from "@/lib/validation";
 import { auditLog } from "@/lib/audit-log";
 
 /** GET /api/stores?page=1&limit=50 — admin sees all; others see stores they created or are assigned to */
 export async function GET(request: NextRequest) {
   try {
-    const auth = await getAuthInfo();
-    if (!auth) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+    const auth = await requireAuth();
+    if (auth instanceof NextResponse) return auth;
 
     await connectToDatabase();
 
@@ -74,10 +73,8 @@ export async function POST(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   if (auth.role !== "admin" && auth.role !== "sub_admin") {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
@@ -93,13 +90,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Body size limit
-  const rawBody = await parseBodyWithLimit(request, 10_000);
-  if (rawBody === null) {
-    return NextResponse.json(
-      { message: "Request body too large." },
-      { status: 413 },
-    );
-  }
+  const jsonBody = await readJsonObject(request, 10_000);
+  if (jsonBody.response) return jsonBody.response;
+  const rawBody = jsonBody.body;
 
   // Schema validation
   const parsed = createStoreBodySchema.safeParse(rawBody);
@@ -183,10 +176,8 @@ export async function PATCH(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   if (auth.role !== "admin" && auth.role !== "sub_admin") {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
@@ -196,10 +187,9 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ message: "A valid store id is required." }, { status: 400 });
   }
 
-  const rawBody = await parseBodyWithLimit(request, 10_000);
-  if (rawBody === null) {
-    return NextResponse.json({ message: "Request body too large." }, { status: 413 });
-  }
+  const jsonBody = await readJsonObject(request, 10_000);
+  if (jsonBody.response) return jsonBody.response;
+  const rawBody = jsonBody.body;
 
   const parsed = createStoreBodySchema.safeParse(rawBody);
   if (!parsed.success) {

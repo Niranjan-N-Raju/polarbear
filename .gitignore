@@ -9,3 +9,4 @@ node_modules/
 details.txt
 .vercel/
 *.tsbuildinfo
+/production-repro-tests/

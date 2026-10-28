@@ -1,17 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SignJWT } from "jose";
+import { readJsonObject } from "@/lib/request-json";
 import bcrypt from "bcryptjs";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
-import { getAuthInfo } from "@/lib/auth";
+import { getAuthInfo, getVerifiedSessionPayload } from "@/lib/auth";
 import { getJwtSecret } from "@/lib/server-env";
-import { SESSION_COOKIE_OPTS } from "@/lib/cookie-opts";
+import { CLEAR_COOKIE_OPTS, SESSION_COOKIE_OPTS } from "@/lib/cookie-opts";
+import {
+  PASSWORD_CHANGE_COOKIE,
+  SESSION_COOKIE,
+  getSessionStart,
+  nowSeconds,
+  signSessionToken,
+} from "@/lib/session-token";
 import { validateCsrf } from "@/lib/csrf";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
-import { updateProfileBodySchema, parseBodyWithLimit } from "@/lib/validation";
+import { updateProfileBodySchema } from "@/lib/validation";
 import { auditLog } from "@/lib/audit-log";
 
-/** GET /api/me — return basic profile of the logged-in user from JWT */
+/**
+ * GET /api/me — return basic profile of the logged-in user from JWT.
+ * Intentionally reachable while a password change is pending.
+ */
 export async function GET() {
   const auth = await getAuthInfo();
   if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -23,6 +33,7 @@ export async function GET() {
     name: user.name,
     email: user.email,
     role: user.role,
+    mustChangePassword: auth.mustChangePassword === true,
   });
 }
 
@@ -49,13 +60,9 @@ export async function PATCH(request: NextRequest) {
   }
 
   // Body size limit
-  const rawBody = await parseBodyWithLimit(request, 10_000);
-  if (rawBody === null) {
-    return NextResponse.json(
-      { message: "Request body too large." },
-      { status: 413 },
-    );
-  }
+  const jsonBody = await readJsonObject(request, 10_000);
+  if (jsonBody.response) return jsonBody.response;
+  const rawBody = jsonBody.body;
 
   // Schema validation
   const parsed = updateProfileBodySchema.safeParse(rawBody);
@@ -108,8 +115,20 @@ export async function PATCH(request: NextRequest) {
         { status: 400 },
       );
     }
+    if (await bcrypt.compare(newPassword, user.password)) {
+      return NextResponse.json(
+        { message: "New password must be different from the current password" },
+        { status: 400 },
+      );
+    }
     user.password = await bcrypt.hash(newPassword, 12);
     user.sessionVersion = (user.sessionVersion ?? 0) + 1;
+    user.mustChangePassword = false;
+  } else if (auth.mustChangePassword) {
+    return NextResponse.json(
+      { message: "You must set a new password before continuing.", code: "PASSWORD_CHANGE_REQUIRED" },
+      { status: 403 },
+    );
   }
 
   await user.save();
@@ -121,18 +140,29 @@ export async function PATCH(request: NextRequest) {
   });
 
   // Re-issue JWT so profile changes (e.g. name) are reflected immediately.
-  const newToken = await new SignJWT({
-    id: String(user._id),
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    sessionVersion: user.sessionVersion ?? 0,
-  })
-    .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("8h")
-    .sign(getJwtSecret());
+  // The original login time is preserved so the 24h absolute session cap still applies.
+  const current = await getVerifiedSessionPayload();
+  const sessionStart = (current && getSessionStart(current.payload)) ?? nowSeconds();
+  const stillRestricted = user.mustChangePassword === true;
+  const newToken = await signSessionToken(
+    {
+      id: String(user._id),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      sessionVersion: user.sessionVersion ?? 0,
+      sessionStart,
+      mustChangePassword: stillRestricted,
+    },
+    getJwtSecret(),
+  );
 
-  const response = NextResponse.json({ message: "Profile updated" });
-  response.cookies.set("em_session", newToken, SESSION_COOKIE_OPTS);
+  const response = NextResponse.json({ message: "Profile updated", mustChangePassword: stillRestricted });
+  if (stillRestricted) {
+    response.cookies.set(PASSWORD_CHANGE_COOKIE, newToken, SESSION_COOKIE_OPTS);
+  } else {
+    response.cookies.set(PASSWORD_CHANGE_COOKIE, "", CLEAR_COOKIE_OPTS);
+    response.cookies.set(SESSION_COOKIE, newToken, SESSION_COOKIE_OPTS);
+  }
   return response;
 }

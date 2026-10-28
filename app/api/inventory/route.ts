@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { readJsonObject } from "@/lib/request-json";
 import { NextRequest, NextResponse } from "next/server";
 import { validateCsrf } from "@/lib/csrf";
 import { getInventoryClient, getInventoryDatabase } from "@/lib/inventory-db";
@@ -27,7 +28,9 @@ export async function POST(request: NextRequest) {
   if (csrfError) return csrfError;
   const access = await getStoreAccess(request);
   if ("response" in access) return access.response;
-  const body = (await request.json()) as { productId?: string; expiryDate?: string; quantity?: unknown };
+  const jsonBody = await readJsonObject<{ productId?: string; expiryDate?: string; quantity?: unknown }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const quantity = parsePositiveInteger(body.quantity);
   if (!body.productId || !ObjectId.isValid(body.productId) || !body.expiryDate || !isValidDate(body.expiryDate) || !quantity) {
     return NextResponse.json({ message: "Product, expiry date, and a positive quantity are required." }, { status: 400 });
@@ -52,7 +55,9 @@ export async function PATCH(request: NextRequest) {
   if (csrfError) return csrfError;
   const access = await getStoreAccess(request);
   if ("response" in access) return access.response;
-  const body = (await request.json()) as { action?: string; inventoryItemId?: string; quantity?: unknown };
+  const jsonBody = await readJsonObject<{ action?: string; inventoryItemId?: string; quantity?: unknown }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   if (!body.inventoryItemId || !ObjectId.isValid(body.inventoryItemId)) {
     return NextResponse.json({ message: "A valid inventory item is required." }, { status: 400 });
   }

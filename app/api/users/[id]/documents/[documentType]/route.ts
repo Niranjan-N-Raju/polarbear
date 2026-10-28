@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
-import { getAuthInfo } from "@/lib/auth";
+import { requireAuth } from "@/lib/api-auth";
 import { canManageTargetUser, USER_MANAGEMENT_CALLERS } from "@/lib/user-permissions";
 import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
@@ -28,8 +28,8 @@ function getDocumentType(value: string): DocumentType | null {
 }
 
 async function authorize(id: string) {
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   if (!USER_MANAGEMENT_CALLERS.has(auth.role)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }

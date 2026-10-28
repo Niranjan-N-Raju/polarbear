@@ -5,7 +5,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import Franchise from "@/models/Franchise";
 import Sale from "@/models/Sale";
-import { getAuthInfo } from "@/lib/auth";
+import { requireAuth } from "@/lib/api-auth";
 import { computeMonthlyAttrition } from "@/lib/attrition";
 import { computeExpenseBreakdown, computePaymentMixTrend, computeWeekdayPerformance } from "@/lib/sales-insights";
 import { currentMonthRange } from "@/lib/date-utils";
@@ -14,10 +14,8 @@ const FRANCHISE_COOKIE = "em_franchise";
 
 /** GET /api/dashboard — returns role-scoped stats for the dashboard */
 export async function GET() {
-  const auth = await getAuthInfo();
-  if (!auth) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const cookieStore = await cookies();
   const activeFranchiseId = cookieStore.get(FRANCHISE_COOKIE)?.value ?? null;

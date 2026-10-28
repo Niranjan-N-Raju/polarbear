@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject } from "@/lib/request-json";
 import Sale from "@/models/Sale";
 import { connectToDatabase } from "@/lib/mongodb";
 import { getAuthorizedStoreAdminId, requireAuth } from "@/lib/api-auth";
@@ -68,7 +69,9 @@ export async function POST(request: NextRequest) {
   if (authResult instanceof NextResponse) return authResult;
   const auth = authResult;
 
-  const body = (await request.json()) as SalePayload;
+  const jsonBody = await readJsonObject<SalePayload>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const franchiseId = await getAuthorizedStoreAdminId(auth, body.franchiseId ?? null);
   if (!franchiseId) {
     return NextResponse.json({ message: "A valid store is required." }, { status: 400 });

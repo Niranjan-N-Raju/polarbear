@@ -111,3 +111,33 @@ export const RATE_LIMITS = {
   passwordChange: { windowMs: 15 * 60 * 1000, maxAttempts: 5, lockoutMs: 30 * 60 * 1000 },
   sessionExtend: { windowMs: 5 * 60 * 1000, maxAttempts: 10, lockoutMs: 5 * 60 * 1000 },
 } as const;
+
+/** Per-account cap across all IPs; high enough that a remote attacker cannot cheaply lock out the owner. */
+export const LOGIN_ACCOUNT_GLOBAL_LIMIT = {
+  windowMs: 15 * 60 * 1000,
+  maxAttempts: 50,
+  lockoutMs: 15 * 60 * 1000,
+} as const;
+
+export function loginAccountRateKeys(email: string, ip: string) {
+  const normalized = email.toLowerCase().trim();
+  return {
+    perIp: `login-account:${normalized}:${ip}`,
+    global: `login-account-global:${normalized}`,
+  };
+}
+
+/**
+ * Account-level login throttling. The 5-per-15-min budget is scoped to (email, ip) so guesses
+ * from other IPs cannot lock the owner out; a looser global cap still bounds distributed guessing.
+ */
+export function checkLoginAccountRateLimit(email: string, ip: string): RateLimitResult {
+  const keys = loginAccountRateKeys(email, ip);
+  const perIp = checkRateLimit(keys.perIp, RATE_LIMITS.login);
+  if (!perIp.allowed) return perIp;
+  return checkRateLimit(keys.global, LOGIN_ACCOUNT_GLOBAL_LIMIT);
+}
+
+export function resetLoginAccountRateLimit(email: string, ip: string): void {
+  resetRateLimit(loginAccountRateKeys(email, ip).perIp);
+}

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
 import { CLEAR_COOKIE_OPTS } from "@/lib/cookie-opts";
+import { getJwtSecret } from "@/lib/server-env";
+import {
+  PASSWORD_CHANGE_COOKIE,
+  SESSION_COOKIE,
+  verifySessionToken,
+} from "@/lib/session-token";
 
 // Routes accessible only to admin / sub_admin
 const GLOBAL_ADMIN_ROUTES = ["/stores", "/users"];
@@ -12,6 +17,8 @@ const FRANCHISE_ADMIN_ROUTES = [
   "/inventory",
   "/salary",
   "/sales",
+  "/pnl",
+  "/withdrawals",
 ];
 const PROTECTED_ROUTES = [
   "/dashboard",
@@ -21,7 +28,7 @@ const PROTECTED_ROUTES = [
   ...FRANCHISE_ADMIN_ROUTES,
 ];
 const LOGIN_PATH = "/login";
-const COOKIE_NAME = "em_session";
+const PROFILE_PATH = "/profile";
 
 function redirectToLogin(request: NextRequest) {
   // Preserve the attempted path so login can return users to where they were.
@@ -33,7 +40,9 @@ function redirectToLogin(request: NextRequest) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get(COOKIE_NAME)?.value;
+  const fullToken = request.cookies.get(SESSION_COOKIE)?.value;
+  const restrictedToken = request.cookies.get(PASSWORD_CHANGE_COOKIE)?.value;
+  const token = fullToken ?? restrictedToken;
 
   if (pathname === LOGIN_PATH) {
     return NextResponse.next();
@@ -51,20 +60,30 @@ export async function proxy(request: NextRequest) {
     return redirectToLogin(request);
   }
 
-  // Fail fast if JWT_SECRET is not configured
-  const jwtSecretRaw = process.env.JWT_SECRET;
-  if (!jwtSecretRaw) {
-    console.error(
-      "[PROXY] JWT_SECRET is not set — blocking all protected routes.",
-    );
+  // Fail fast if JWT_SECRET is missing or too weak.
+  let secret: Uint8Array;
+  try {
+    secret = getJwtSecret();
+  } catch (error) {
+    console.error("[PROXY] Invalid JWT_SECRET — blocking all protected routes.", error);
     return redirectToLogin(request);
   }
 
   try {
-    // Parse and verify JWT in the edge layer to keep protected routes fast.
-    const secret = new TextEncoder().encode(jwtSecretRaw);
-    const { payload } = await jwtVerify(token, secret);
+    // Parse and verify JWT in the proxy layer to keep protected routes fast.
+    const payload = await verifySessionToken(token, secret);
     const role = payload.role as string;
+
+    // Accounts with an admin-issued password may only reach the profile page until they change it.
+    const mustChangePassword = !fullToken || payload.mustChangePassword === true;
+    if (mustChangePassword) {
+      if (pathname === PROFILE_PATH || pathname.startsWith(PROFILE_PATH + "/")) {
+        return NextResponse.next();
+      }
+      const profileUrl = new URL(PROFILE_PATH, request.url);
+      profileUrl.searchParams.set("passwordChangeRequired", "1");
+      return NextResponse.redirect(profileUrl);
+    }
 
     const isGlobalAdminRoute = GLOBAL_ADMIN_ROUTES.some(
       (r) => pathname === r || pathname.startsWith(r + "/"),
@@ -85,7 +104,8 @@ export async function proxy(request: NextRequest) {
   } catch {
     // Invalid/expired session: clear cookie and force re-authentication.
     const response = redirectToLogin(request);
-    response.cookies.set(COOKIE_NAME, "", CLEAR_COOKIE_OPTS);
+    response.cookies.set(SESSION_COOKIE, "", CLEAR_COOKIE_OPTS);
+    response.cookies.set(PASSWORD_CHANGE_COOKIE, "", CLEAR_COOKIE_OPTS);
     return response;
   }
 }
@@ -101,6 +121,8 @@ export const config = {
     "/inventory/:path*",
     "/salary/:path*",
     "/sales/:path*",
+    "/pnl/:path*",
+    "/withdrawals/:path*",
     "/stores/:path*",
     "/users/:path*",
     "/docs/:path*",

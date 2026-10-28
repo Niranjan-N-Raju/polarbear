@@ -4,6 +4,8 @@ export interface AppShellProps {
   initialFranchiseName: string;
   userRole: string;
   userName: string;
+  /** Restricted session: only the profile page (password change) is usable. */
+  mustChangePassword?: boolean;
 }
 
 export interface SidebarProps {

@@ -15,6 +15,8 @@ export interface IUser extends Document {
   role: "admin" | "sub_admin" | "franchise_admin" | "employee";
   isActive: boolean;
   sessionVersion: number;
+  mustChangePassword?: boolean;
+  preferredLanguage?: "en" | "kn";
   archivedAt?: Date;
   franchises: mongoose.Types.ObjectId[];
   createdBy?: mongoose.Types.ObjectId;
@@ -65,6 +67,9 @@ const UserSchema: Schema<IUser> = new Schema(
     },
     isActive: { type: Boolean, default: true },
     sessionVersion: { type: Number, default: 0, min: 0 },
+    // Set by the backend when an admin issues a password; cleared on self-service change.
+    mustChangePassword: { type: Boolean, default: false },
+    preferredLanguage: { type: String, enum: ["en", "kn"], default: "en" },
     archivedAt: { type: Date },
     franchises: [{ type: mongoose.Schema.Types.ObjectId, ref: "Franchise" }],
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import mongoose from "mongoose";
 import { getAuthInfo } from "@/lib/auth";
-import { getAllowedFranchiseIdsForCaller, isGlobalRole } from "@/lib/user-permissions";
+import {
+  getAllowedFranchiseIdsForCaller,
+  getUnauthorizedFranchiseIds,
+} from "@/lib/user-permissions";
+import { PASSWORD_CHANGE_REQUIRED_CODE } from "@/lib/session-token";
 import type { AuthInfo } from "@/lib/auth";
 
 export type AuthenticatedRequest = {
@@ -15,17 +18,41 @@ export type StoreAccess = {
 
 export type StoreAccessResult = StoreAccess | { response: NextResponse };
 
-export async function requireAuth(): Promise<AuthInfo | NextResponse> {
-  const auth = await getAuthInfo();
-  return auth ?? NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+export function passwordChangeRequiredResponse(): NextResponse {
+  return NextResponse.json(
+    {
+      message: "You must change your password before continuing.",
+      code: PASSWORD_CHANGE_REQUIRED_CODE,
+    },
+    { status: 403 },
+  );
 }
 
+/**
+ * Authenticates the caller. Accounts flagged with mustChangePassword get 403
+ * PASSWORD_CHANGE_REQUIRED (only /api/me, logout and extend bypass this check).
+ */
+export async function requireAuth(): Promise<AuthInfo | NextResponse> {
+  const auth = await getAuthInfo();
+  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (auth.mustChangePassword) return passwordChangeRequiredResponse();
+  return auth;
+}
+
+/**
+ * admin: any store. sub_admin: stores they created or are assigned to.
+ * Other roles: assigned stores only.
+ */
 export async function getAuthorizedStoreId(
   auth: AuthInfo,
   requestedId: string | null | undefined,
 ): Promise<string | null> {
-  if (!requestedId || !mongoose.isValidObjectId(requestedId)) return null;
-  if (isGlobalRole(auth.role)) return requestedId;
+  if (typeof requestedId !== "string" || !/^[a-f\d]{24}$/i.test(requestedId)) return null;
+  if (auth.role === "admin") return requestedId;
+  if (auth.role === "sub_admin") {
+    const denied = await getUnauthorizedFranchiseIds(auth, [requestedId]);
+    return denied.length === 0 ? requestedId : null;
+  }
   const allowedIds = await getAllowedFranchiseIdsForCaller(auth);
   return allowedIds?.includes(requestedId) ? requestedId : null;
 }

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject } from "@/lib/request-json";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import Franchise from "@/models/Franchise";
 import { DEFAULT_POSITION_OPTIONS } from "@/lib/employee-positions";
 import bcrypt from "bcryptjs";
-import { getAuthInfo, type AuthInfo } from "@/lib/auth";
+import type { AuthInfo } from "@/lib/auth";
+import { requireAuth } from "@/lib/api-auth";
 import {
   getAllowedAssignableRoles,
   getAllowedFranchiseIdsForCaller,
@@ -13,7 +15,7 @@ import {
 } from "@/lib/user-permissions";
 import { validateCsrf } from "@/lib/csrf";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
-import { createUserBodySchema, parseBodyWithLimit } from "@/lib/validation";
+import { createUserBodySchema } from "@/lib/validation";
 import { auditLog } from "@/lib/audit-log";
 
 /**
@@ -23,10 +25,8 @@ import { auditLog } from "@/lib/audit-log";
  * - franchise_admin   : see only employees in their own franchises
  */
 export async function GET(request: NextRequest) {
-  const auth = await getAuthInfo();
-  if (!auth) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   if (!USER_MANAGEMENT_CALLERS.has(auth.role)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
@@ -449,10 +449,8 @@ export async function POST(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   if (!USER_MANAGEMENT_CALLERS.has(auth.role)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
@@ -468,13 +466,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Body size limit
-  const rawBody = await parseBodyWithLimit(request, 50_000);
-  if (rawBody === null) {
-    return NextResponse.json(
-      { message: "Request body too large." },
-      { status: 413 },
-    );
-  }
+  const jsonBody = await readJsonObject(request, 50_000);
+  if (jsonBody.response) return jsonBody.response;
+  const rawBody = jsonBody.body;
 
   // Schema validation
   const parsed = createUserBodySchema.safeParse(rawBody);

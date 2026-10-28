@@ -1,4 +1,5 @@
-import { DATE_PATTERN, localDateValue } from "@/lib/date-utils";
+import { validateRecordDate } from "@/lib/date-utils";
+import { hasAtMostTwoDecimals } from "@/lib/validation";
 import type { SalePayload } from "@/types/sales-api";
 
 export interface ValidatedSale {
@@ -12,12 +13,12 @@ export interface ValidatedSale {
 }
 
 function isFiniteNonNegative(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && hasAtMostTwoDecimals(value);
 }
 
 export function validateSalePayload(body: SalePayload): { value: ValidatedSale } | { error: string } {
-  if (!body.date || !DATE_PATTERN.test(body.date)) return { error: "A valid date is required." };
-  if (body.date > localDateValue()) return { error: "Date cannot be in the future." };
+  const dateError = validateRecordDate(body.date);
+  if (dateError) return { error: dateError };
 
   for (const field of ["totalSale", "swiggy", "zomato", "upi", "upiCharge"] as const) {
     if (!isFiniteNonNegative(body[field])) return { error: `A valid ${field} is required.` };
@@ -29,8 +30,8 @@ export function validateSalePayload(body: SalePayload): { value: ValidatedSale }
 
   const expenses: { name: string; amount: number }[] = [];
   for (const expense of body.expenses) {
-    const name = expense.name?.trim() ?? "";
-    if (!name || name.length > 100 || !isFiniteNonNegative(expense.amount)) {
+    const name = typeof expense?.name === "string" ? expense.name.trim() : "";
+    if (!name || name.length > 100 || !isFiniteNonNegative(expense?.amount)) {
       return { error: "Each expense needs a name and a valid amount." };
     }
     expenses.push({ name, amount: expense.amount });
@@ -38,7 +39,7 @@ export function validateSalePayload(body: SalePayload): { value: ValidatedSale }
 
   return {
     value: {
-      date: body.date,
+      date: body.date as string,
       totalSale: body.totalSale as number,
       swiggy: body.swiggy as number,
       zomato: body.zomato as number,

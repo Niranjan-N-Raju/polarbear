@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject } from "@/lib/request-json";
 import Franchise from "@/models/Franchise";
-import { getAuthInfo } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
-import { getAuthorizedStoreAdminId } from "@/lib/api-auth";
+import { getAuthorizedStoreAdminId, requireAuth } from "@/lib/api-auth";
 import { auditLog } from "@/lib/audit-log";
 
 export async function GET(request: NextRequest) {
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const franchiseId = new URL(request.url).searchParams.get("franchiseId") ?? "";
   await connectToDatabase();
@@ -28,10 +28,12 @@ export async function PUT(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
-  const body = (await request.json()) as { franchiseId?: string; name?: string };
+  const jsonBody = await readJsonObject<{ franchiseId?: string; name?: string }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const franchiseId = body.franchiseId ?? "";
   const name = body.name?.trim() ?? "";
   if (!name || name.length > 100) {

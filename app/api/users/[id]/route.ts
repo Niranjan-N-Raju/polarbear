@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import Franchise from "@/models/Franchise";
-import { getAuthInfo, type AuthInfo } from "@/lib/auth";
+import type { AuthInfo } from "@/lib/auth";
+import { requireAuth } from "@/lib/api-auth";
 import {
   canManageTargetUser,
   getAllowedAssignableRoles,
@@ -12,11 +13,13 @@ import {
   USER_MANAGEMENT_CALLERS,
 } from "@/lib/user-permissions";
 import { validateCsrf } from "@/lib/csrf";
-import { patchUserBodySchema, parseBodyWithLimit } from "@/lib/validation";
+import { patchUserBodySchema } from "@/lib/validation";
 import { auditLog } from "@/lib/audit-log";
 import { getClientIp } from "@/lib/rate-limit";
 import { decryptUserFields } from "@/lib/crypto";
-import { localDateValue } from "@/lib/date-utils";
+import { businessDateValue, isValidDate } from "@/lib/date-utils";
+import { readJsonBody, readJsonObject } from "@/lib/request-json";
+import mongoose from "mongoose";
 import { DEFAULT_POSITION_OPTIONS } from "@/lib/employee-positions";
 
 function isAdultDate(value: string): boolean {
@@ -32,10 +35,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await getAuthInfo();
-  if (!auth) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   if (!USER_MANAGEMENT_CALLERS.has(auth.role)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
@@ -98,10 +99,8 @@ export async function PATCH(
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   if (!USER_MANAGEMENT_CALLERS.has(auth.role)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
@@ -110,10 +109,9 @@ export async function PATCH(
   const ip = getClientIp(request);
 
   // Body size limit and validation
-  const rawBody = await parseBodyWithLimit(request, 10_000);
-  if (rawBody === null) {
-    return NextResponse.json({ message: "Request body too large." }, { status: 413 });
-  }
+  const jsonBody = await readJsonObject(request, 10_000);
+  if (jsonBody.response) return jsonBody.response;
+  const rawBody = jsonBody.body;
   const parsed = patchUserBodySchema.safeParse(rawBody);
   if (!parsed.success) {
     return NextResponse.json(
@@ -303,10 +301,8 @@ export async function PUT(
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   if (!USER_MANAGEMENT_CALLERS.has(auth.role)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
@@ -351,10 +347,8 @@ export async function DELETE(
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   if (!USER_MANAGEMENT_CALLERS.has(auth.role)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
@@ -390,22 +384,19 @@ export async function DELETE(
 
   if (targetRole === "employee") {
     let archivedAt = new Date();
-    try {
-      const body = (await request.json()) as { exitDate?: string };
-      if (body.exitDate) {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(body.exitDate)) {
-          return NextResponse.json({ message: "A valid exit date is required." }, { status: 400 });
-        }
-        const today = localDateValue();
-        if (body.exitDate > today) {
-          return NextResponse.json({ message: "Exit date cannot be in the future." }, { status: 400 });
-        }
-        const [year, month, day] = body.exitDate.split("-").map(Number);
-        // Employee stays "active" through their exit date; archivedAt marks the first inactive day.
-        archivedAt = new Date(Date.UTC(year, month - 1, day + 1));
+    // The body is optional; without a valid JSON body the employee is archived as of now.
+    const body = (await readJsonBody(request, 10_000)) as { exitDate?: unknown } | null;
+    const exitDate = body && typeof body === "object" ? body.exitDate : undefined;
+    if (exitDate !== undefined && exitDate !== null && exitDate !== "") {
+      if (typeof exitDate !== "string" || !isValidDate(exitDate)) {
+        return NextResponse.json({ message: "A valid exit date is required." }, { status: 400 });
       }
-    } catch {
-      // No JSON body provided — fall back to archiving as of now.
+      if (exitDate > businessDateValue()) {
+        return NextResponse.json({ message: "Exit date cannot be in the future." }, { status: 400 });
+      }
+      const [year, month, day] = exitDate.split("-").map(Number);
+      // Employee stays "active" through their exit date; archivedAt marks the first inactive day.
+      archivedAt = new Date(Date.UTC(year, month - 1, day + 1));
     }
 
     const archived = await User.findByIdAndUpdate(

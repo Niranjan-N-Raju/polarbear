@@ -1,15 +1,27 @@
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { SignJWT, jwtVerify } from "jose";
 import { getJwtSecret } from "@/lib/server-env";
-import { SESSION_COOKIE_OPTS } from "@/lib/cookie-opts";
+import { CLEAR_COOKIE_OPTS, SESSION_COOKIE_OPTS } from "@/lib/cookie-opts";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import { validateCsrf } from "@/lib/csrf";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
 import { auditLog } from "@/lib/audit-log";
+import { getSessionCookieToken } from "@/lib/auth";
+import {
+  PASSWORD_CHANGE_COOKIE,
+  SESSION_COOKIE,
+  getSessionStart,
+  isSessionExpiredAbsolute,
+  signSessionToken,
+  verifySessionToken,
+} from "@/lib/session-token";
 
-const COOKIE_NAME = "em_session";
+function unauthorized(message: string) {
+  const response = NextResponse.json({ message }, { status: 401 });
+  response.cookies.set(SESSION_COOKIE, "", CLEAR_COOKIE_OPTS);
+  response.cookies.set(PASSWORD_CHANGE_COOKIE, "", CLEAR_COOKIE_OPTS);
+  return response;
+}
 
 export async function POST(request: NextRequest) {
   const csrfError = validateCsrf(request);
@@ -24,73 +36,55 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-
-  if (!token) {
-    return NextResponse.json(
-      { message: "Session not found." },
-      { status: 401 },
-    );
+  const cookieToken = await getSessionCookieToken();
+  if (!cookieToken) {
+    return NextResponse.json({ message: "Session not found." }, { status: 401 });
   }
 
   try {
     // Re-verify the existing session first; only valid sessions can be extended.
-    const { payload } = await jwtVerify(token, getJwtSecret());
-    const id = payload.id as string | undefined;
-    const tokenSessionVersion =
-      typeof payload.sessionVersion === "number" && Number.isInteger(payload.sessionVersion)
-        ? payload.sessionVersion
-        : 0;
-
-    if (!id) {
-      return NextResponse.json(
-        { message: "Invalid session." },
-        { status: 401 },
-      );
+    const payload = await verifySessionToken(cookieToken.token, getJwtSecret());
+    // Sliding extensions are capped at 24h after the original login.
+    if (isSessionExpiredAbsolute(payload)) {
+      return unauthorized("Session expired. Please sign in again.");
     }
+    const sessionStart = getSessionStart(payload) as number;
 
     // Verify the account is still active and this session has not been revoked.
     await connectToDatabase();
-    const user = await User.findById(id)
-      .select("_id name email role isActive sessionVersion")
+    const user = await User.findById(payload.id)
+      .select("_id name email role isActive sessionVersion mustChangePassword")
       .lean();
     const sessionVersion = typeof user?.sessionVersion === "number" ? user.sessionVersion : 0;
-    if (!user || user.isActive === false || sessionVersion !== tokenSessionVersion) {
-      const response = NextResponse.json(
-        { message: "User no longer exists." },
-        { status: 401 },
-      );
-      response.cookies.set(COOKIE_NAME, "", { ...SESSION_COOKIE_OPTS, maxAge: 0 });
-      return response;
+    if (!user || user.isActive === false || sessionVersion !== payload.sessionVersion) {
+      return unauthorized("User no longer exists.");
     }
 
-    const refreshedToken = await new SignJWT({
-      id,
-      role: user.role,
-      name: user.name,
-      email: user.email,
-      sessionVersion,
-    })
-      .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("8h")
-      .sign(getJwtSecret());
+    const mustChangePassword = cookieToken.restricted || user.mustChangePassword === true;
+    const refreshedToken = await signSessionToken(
+      {
+        id: payload.id,
+        role: user.role,
+        name: user.name,
+        email: user.email,
+        sessionVersion,
+        sessionStart,
+        mustChangePassword,
+      },
+      getJwtSecret(),
+    );
 
-    auditLog("auth.session.extended", { actorId: id, actorRole: user.role, ip });
+    auditLog("auth.session.extended", { actorId: payload.id, actorRole: user.role, ip });
 
     const response = NextResponse.json({ message: "Session extended." });
-    // Sliding-session behavior: issue a fresh 8h cookie from now.
-    response.cookies.set(COOKIE_NAME, refreshedToken, SESSION_COOKIE_OPTS);
+    // Sliding-session behavior: issue a fresh 8h cookie from now (bounded by the 24h cap above).
+    response.cookies.set(
+      cookieToken.restricted ? PASSWORD_CHANGE_COOKIE : SESSION_COOKIE,
+      refreshedToken,
+      SESSION_COOKIE_OPTS,
+    );
     return response;
   } catch {
-    const response = NextResponse.json(
-      { message: "Invalid session." },
-      { status: 401 },
-    );
-    response.cookies.set(COOKIE_NAME, "", {
-      ...SESSION_COOKIE_OPTS,
-      maxAge: 0,
-    });
-    return response;
+    return unauthorized("Invalid session.");
   }
 }

@@ -1,17 +1,17 @@
 import mongoose from "mongoose";
+import { readJsonObject } from "@/lib/request-json";
 import { NextRequest, NextResponse } from "next/server";
 import Incentive from "@/models/Incentive";
 import User from "@/models/User";
-import { getAuthInfo } from "@/lib/auth";
 import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
-import { getAuthorizedStoreAdminId } from "@/lib/api-auth";
+import { getAuthorizedStoreAdminId, requireAuth } from "@/lib/api-auth";
 
 const PERIOD_PATTERN = /^\d{4}-\d{2}$/;
 
 export async function GET(request: NextRequest) {
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
   const params = new URL(request.url).searchParams;
   const franchiseId = params.get("franchiseId") ?? "";
@@ -40,16 +40,18 @@ export async function POST(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
-  const body = (await request.json()) as {
+  const jsonBody = await readJsonObject<{
     franchiseId?: string;
     employeeId?: string;
     period?: string;
     type?: string;
     amount?: number;
-  };
+  }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const franchiseId = body.franchiseId ?? "";
   if (!(await getAuthorizedStoreAdminId(auth, franchiseId))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });

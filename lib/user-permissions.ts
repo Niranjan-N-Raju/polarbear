@@ -1,4 +1,5 @@
 import User from "@/models/User";
+import Franchise from "@/models/Franchise";
 import type { AuthInfo } from "@/lib/auth";
 import mongoose from "mongoose";
 
@@ -30,6 +31,32 @@ export async function getAllowedFranchiseIdsForCaller(
   if (!me) return [];
 
   return ((me as { franchises?: unknown[] }).franchises ?? []).map(String);
+}
+
+/**
+ * Returns the subset of `franchiseIds` the caller may NOT access/assign.
+ * admin: unrestricted. sub_admin: stores they created or are assigned to.
+ * Other roles: only assigned stores.
+ */
+export async function getUnauthorizedFranchiseIds(
+  auth: AuthInfo,
+  franchiseIds: string[],
+): Promise<string[]> {
+  if (auth.role === "admin" || franchiseIds.length === 0) return [];
+  const me = await User.findById(auth.id).select("franchises").lean();
+  const assigned = new Set(
+    ((me as { franchises?: unknown[] } | null)?.franchises ?? []).map(String),
+  );
+  const remaining = franchiseIds.filter((id) => !assigned.has(String(id)));
+  if (remaining.length === 0 || auth.role !== "sub_admin") return remaining;
+
+  const validIds = remaining.filter((id) => mongoose.isValidObjectId(id));
+  if (validIds.length === 0) return remaining;
+  const created = await Franchise.find({ _id: { $in: validIds }, createdBy: auth.id })
+    .select("_id")
+    .lean();
+  const createdIds = new Set(created.map((f) => String(f._id)));
+  return remaining.filter((id) => !createdIds.has(String(id)));
 }
 
 export async function getTargetUserRole(

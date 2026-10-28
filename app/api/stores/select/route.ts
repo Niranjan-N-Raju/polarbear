@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject } from "@/lib/request-json";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import Franchise from "@/models/Franchise";
-import { getAuthInfo } from "@/lib/auth";
+import { requireAuth } from "@/lib/api-auth";
 import { SESSION_COOKIE_OPTS } from "@/lib/cookie-opts";
 import { validateCsrf } from "@/lib/csrf";
 import mongoose from "mongoose";
@@ -25,12 +26,12 @@ export async function POST(request: NextRequest) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
 
-  const auth = await getAuthInfo();
-  if (!auth) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
-  const body = (await request.json()) as { franchiseId?: string };
+  const jsonBody = await readJsonObject<{ franchiseId?: string }>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const { franchiseId } = body;
 
   if (!franchiseId) {

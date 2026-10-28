@@ -41,6 +41,12 @@ export async function connectToDatabase() {
       .then((m) => m);
   }
 
-  cached.mongoose!.conn = await cached.mongoose!.promise;
+  try {
+    cached.mongoose!.conn = await cached.mongoose!.promise;
+  } catch (error) {
+    // Drop the rejected promise so the next request retries instead of re-throwing forever.
+    cached.mongoose!.promise = null;
+    throw error;
+  }
   return cached.mongoose!.conn;
 }

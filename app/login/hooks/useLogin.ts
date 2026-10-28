@@ -28,6 +28,10 @@ export function useLogin() {
     setIsPending(true);
     const result = await login(email, password);
     setIsPending(false);
+    if (result.success && result.mustChangePassword) {
+      globalThis.window.location.replace("/profile?passwordChangeRequired=1");
+      return;
+    }
     if (result.success) {
       const queryNext = getSafeNextPath(searchParams.get("next"));
       const storedNext = getSafeNextPath(globalThis.window.sessionStorage.getItem("em_return_to"));

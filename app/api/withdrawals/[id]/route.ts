@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { readJsonObject } from "@/lib/request-json";
 import mongoose from "mongoose";
 import Withdrawal from "@/models/Withdrawal";
 import { connectToDatabase } from "@/lib/mongodb";
@@ -23,7 +24,9 @@ export async function PUT(
     return NextResponse.json({ message: "A valid entry id is required." }, { status: 400 });
   }
 
-  const body = (await request.json()) as WithdrawalPayload;
+  const jsonBody = await readJsonObject<WithdrawalPayload>(request);
+  if (jsonBody.response) return jsonBody.response;
+  const body = jsonBody.body;
   const franchiseId = await getAuthorizedStoreAdminId(auth, body.franchiseId ?? null);
   if (!franchiseId) {
     return NextResponse.json({ message: "A valid store is required." }, { status: 400 });

@@ -1,17 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SignJWT } from "jose";
+import { readJsonObject } from "@/lib/request-json";
+import { createHash } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { connectToDatabase } from "@/lib/mongodb";
 import User from "@/models/User";
 import Franchise from "@/models/Franchise";
 import { getJwtSecret } from "@/lib/server-env";
 import { SESSION_COOKIE_OPTS } from "@/lib/cookie-opts";
-import { checkRateLimit, resetRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
+import {
+  checkLoginAccountRateLimit,
+  checkRateLimit,
+  getClientIp,
+  RATE_LIMITS,
+  resetLoginAccountRateLimit,
+  resetRateLimit,
+} from "@/lib/rate-limit";
 import { validateCsrf } from "@/lib/csrf";
-import { loginBodySchema, parseBodyWithLimit } from "@/lib/validation";
+import { loginBodySchema } from "@/lib/validation";
 import { auditLog } from "@/lib/audit-log";
 
-const COOKIE_NAME = "em_session";
+import { CLEAR_COOKIE_OPTS } from "@/lib/cookie-opts";
+import {
+  PASSWORD_CHANGE_COOKIE,
+  SESSION_COOKIE,
+  nowSeconds,
+  signSessionToken,
+} from "@/lib/session-token";
+
+let dummyHashPromise: Promise<string> | null = null;
+
+/** Lazily computed bcrypt hash used to equalise timing when the email is unknown. */
+function getDummyHash(): Promise<string> {
+  dummyHashPromise ??= bcrypt.hash("polar-bear-timing-equaliser", 12).catch((error) => {
+    dummyHashPromise = null;
+    throw error;
+  });
+  return dummyHashPromise;
+}
+
+/** Non-reversible identifier so audit logs never contain the raw email address. */
+function emailFingerprint(email: string): string {
+  return createHash("sha256").update(email).digest("hex").slice(0, 16);
+}
 
 export async function POST(request: NextRequest) {
   // CSRF protection
@@ -39,13 +69,9 @@ export async function POST(request: NextRequest) {
 
   try {
     // Enforce body size limit
-    const rawBody = await parseBodyWithLimit(request, 10_000);
-    if (rawBody === null) {
-      return NextResponse.json(
-        { message: "Request body too large." },
-        { status: 413 },
-      );
-    }
+    const jsonBody = await readJsonObject(request, 10_000);
+    if (jsonBody.response) return jsonBody.response;
+    const rawBody = jsonBody.body;
 
     // Validate with zod schema
     const parsed = loginBodySchema.safeParse(rawBody);
@@ -56,9 +82,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, password } = parsed.data;
-    const accountRateKey = `login-account:${email.toLowerCase().trim()}`;
-    const accountRateCheck = checkRateLimit(accountRateKey, RATE_LIMITS.login);
+    const { password } = parsed.data;
+    const email = parsed.data.email.toLowerCase().trim();
+    const accountRateCheck = checkLoginAccountRateLimit(email, ip);
     if (!accountRateCheck.allowed) {
       auditLog("auth.login.failed", { ip, metadata: { reason: "account_rate_limited" } });
       return NextResponse.json(
@@ -70,12 +96,17 @@ export async function POST(request: NextRequest) {
     await connectToDatabase();
 
     const user = await User.findOne({
-      email: email.toLowerCase().trim(),
+      email,
       isActive: { $ne: false },
-    }).select("password name role email franchises sessionVersion");
+    }).select("password name role email franchises sessionVersion mustChangePassword");
 
     if (!user) {
-      auditLog("auth.login.failed", { ip, metadata: { email, reason: "user_not_found" } });
+      // Spend comparable time to a real check so response timing doesn't reveal unknown emails.
+      await bcrypt.compare(password, await getDummyHash());
+      auditLog("auth.login.failed", {
+        ip,
+        metadata: { emailHash: emailFingerprint(email), reason: "user_not_found" },
+      });
       return NextResponse.json(
         { message: "Invalid email or password." },
         { status: 401 },
@@ -110,21 +141,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Successful — clear rate-limit counter for this IP
+    // Successful — clear rate-limit counters for this IP / account+IP
     resetRateLimit(`login:${ip}`);
-    resetRateLimit(accountRateKey);
+    resetLoginAccountRateLimit(email, ip);
 
-    // Sign a JWT valid for 8 hours using jose (consistent with verify paths)
-    const token = await new SignJWT({
-      id: user._id.toString(),
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      sessionVersion: user.sessionVersion ?? 0,
-    })
-      .setProtectedHeader({ alg: "HS256" })
-      .setExpirationTime("8h")
-      .sign(getJwtSecret());
+    const mustChangePassword = user.mustChangePassword === true;
+    const token = await signSessionToken(
+      {
+        id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        sessionVersion: user.sessionVersion ?? 0,
+        sessionStart: nowSeconds(),
+        mustChangePassword,
+      },
+      getJwtSecret(),
+    );
 
     auditLog("auth.login.success", { actorId: String(user._id), actorRole: user.role, ip });
 
@@ -136,12 +169,21 @@ export async function POST(request: NextRequest) {
           name: user.name,
           email: user.email,
           role: user.role,
+          mustChangePassword,
         },
+        mustChangePassword,
       },
       { status: 200 },
     );
 
-    response.cookies.set(COOKIE_NAME, token, SESSION_COOKIE_OPTS);
+    if (mustChangePassword) {
+      // Only a restricted password-change session is issued; no full app session.
+      response.cookies.set(SESSION_COOKIE, "", CLEAR_COOKIE_OPTS);
+      response.cookies.set(PASSWORD_CHANGE_COOKIE, token, SESSION_COOKIE_OPTS);
+    } else {
+      response.cookies.set(PASSWORD_CHANGE_COOKIE, "", CLEAR_COOKIE_OPTS);
+      response.cookies.set(SESSION_COOKIE, token, SESSION_COOKIE_OPTS);
+    }
 
     return response;
   } catch (error) {
