@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useStoreModal } from "@/app/(app)/store-context";
 import { useToast } from "@/app/hooks/useToast";
 import { SummaryCard } from "@/app/components/SummaryCard";
+import { Checkbox } from "@/app/components/Checkbox";
 import { MobileSummaryDrawer } from "@/app/components/MobileSummaryDrawer";
 import { MonthPicker } from "@/app/components/MonthPicker";
 import type {
@@ -873,7 +874,7 @@ export default function SalaryPage() {
                                             placeholder="0.00"
                                             className="w-full rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-orange focus:border-brand-orange"
                                           />
-                                          <label className="flex items-center gap-2 text-xs text-gray-700"><input type="checkbox" checked={editPaidEarly} onChange={(event) => setEditPaidEarly(event.target.checked)} disabled={savingEdit} className="accent-brand-orange" />Paid early</label>
+                                          <label className="flex items-center gap-2 text-xs text-gray-700"><Checkbox checked={editPaidEarly} onChange={(event) => setEditPaidEarly(event.target.checked)} disabled={savingEdit} />Paid early</label>
                                           {editError && (
                                             <p className="text-xs text-red-600" role="alert">{editError}</p>
                                           )}
