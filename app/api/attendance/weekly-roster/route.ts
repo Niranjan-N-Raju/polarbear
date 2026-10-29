@@ -15,6 +15,7 @@ function resolveShift(
   shifts: { id: string; name: string; startTime: string; endTime: string }[],
 ): string {
   // Resolve old roster representations to the current configured shift IDs.
+  if (day.shift === "leave" || day.status === "leave") return "leave";
   if (day.shift === "off" || day.status === "off") return "off";
   const saved = shifts.find((shift) => shift.id === day.shift);
   if (saved) return saved.id;
@@ -69,7 +70,7 @@ function serializeRoster(roster: RosterToSerialize, shifts: { id: string; name: 
         return {
           date: day.date,
           shift: shiftId,
-          shiftName: shift?.name ?? (shiftId === "off" ? "Off" : "Unconfigured shift"),
+          shiftName: shift?.name ?? (shiftId === "leave" ? "Leave" : shiftId === "off" ? "Off" : "Unconfigured shift"),
           startTime: shift?.startTime ?? "",
           endTime: shift?.endTime ?? "",
         };
@@ -161,8 +162,8 @@ export async function PUT(request: NextRequest) {
   if (!store) return NextResponse.json({ message: "Store not found." }, { status: 404 });
   const validShiftIds = new Set((store.shifts ?? []).map((shift) => shift.id));
   for (const entry of body.entries) {
-    if (entry.days?.some((day) => !day.shift || (day.shift !== "off" && !validShiftIds.has(day.shift)))) {
-      return NextResponse.json({ message: "Choose a configured shift or mark the day off." }, { status: 400 });
+    if (entry.days?.some((day) => !day.shift || (day.shift !== "off" && day.shift !== "leave" && !validShiftIds.has(day.shift)))) {
+      return NextResponse.json({ message: "Choose a configured shift, day off, or leave." }, { status: 400 });
     }
   }
   const employees = await User.find({
@@ -187,7 +188,7 @@ export async function PUT(request: NextRequest) {
     employee: new mongoose.Types.ObjectId(entry.employeeId),
     days: entry.days!.map((day) => ({
       date: day.date!,
-      shift: day.shift as "morning" | "night" | "off",
+      shift: day.shift!,
     })),
   }));
   const createdBy = mongoose.isValidObjectId(authResult.id)

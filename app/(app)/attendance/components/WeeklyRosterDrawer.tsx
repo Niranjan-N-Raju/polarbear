@@ -122,8 +122,8 @@ export function WeeklyRosterDrawer({
       error("Configure at least one shift in Store Config before saving the roster.");
       return;
     }
-    if (schedules.some((schedule) => schedule.days.some((day) => day.shift !== "off" && !shifts.some((shift) => shift.id === day.shift)))) {
-      error("Choose a configured shift or mark each day off.");
+    if (schedules.some((schedule) => schedule.days.some((day) => day.shift !== "off" && day.shift !== "leave" && !shifts.some((shift) => shift.id === day.shift)))) {
+      error("Choose a configured shift, day off, or leave for each day.");
       return;
     }
     setSaving(true);
@@ -217,7 +217,7 @@ export function WeeklyRosterDrawer({
                                 value={day.shift}
                                 onChange={(event) => {
                                   const shift = event.target.value;
-                                  if (date === weekDates[0]) updateEmployeeWeek(employee._id, shift);
+                                  if (date === weekDates[0] && shift !== "leave") updateEmployeeWeek(employee._id, shift);
                                   else updateDay(employee._id, date, { shift });
                                 }}
                                 className="w-full min-w-0 rounded-md border border-gray-300 bg-white px-1.5 py-1.5 text-[11px] text-gray-800 focus:border-brand-orange focus:outline-none focus:ring-1 focus:ring-brand-orange"
@@ -227,9 +227,10 @@ export function WeeklyRosterDrawer({
                                   <option key={shift.id} value={shift.id}>{shift.name}</option>
                                 ))}
                                 <option value="off">Off</option>
+                                <option value="leave">Leave</option>
                               </select>
                               <p className="mt-1 text-center text-[10px] text-gray-500">
-                                {day.shift === "off" ? "Day off" : selectedShift ? `${selectedShift.startTime}–${selectedShift.endTime}` : "Select a shift"}
+                                {day.shift === "leave" ? "Leave" : day.shift === "off" ? "Day off" : selectedShift ? `${selectedShift.startTime}–${selectedShift.endTime}` : "Select a shift"}
                               </p>
                             </td>
                           );

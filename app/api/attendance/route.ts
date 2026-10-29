@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
                   franchise: franchiseObjectId,
                   employee: entry.employee,
                   date: day.date,
-                  status: (day.shift === "off" ? "Week Off" : "Present") as AttendanceStatus,
+                  status: (day.shift === "leave" ? "Absent" : day.shift === "off" ? "Week Off" : "Present") as AttendanceStatus,
                   comment: "",
                   createdBy: roster.createdBy,
                 },
