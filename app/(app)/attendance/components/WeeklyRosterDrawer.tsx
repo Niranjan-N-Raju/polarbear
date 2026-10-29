@@ -217,7 +217,7 @@ export function WeeklyRosterDrawer({
                                 value={day.shift}
                                 onChange={(event) => {
                                   const shift = event.target.value;
-                                  if (date === weekDates[0] && shift !== "leave") updateEmployeeWeek(employee._id, shift);
+                                  if (date === weekDates[0] && shift !== "off" && shift !== "leave") updateEmployeeWeek(employee._id, shift);
                                   else updateDay(employee._id, date, { shift });
                                 }}
                                 className="w-full min-w-0 rounded-md border border-gray-300 bg-white px-1.5 py-1.5 text-[11px] text-gray-800 focus:border-brand-orange focus:outline-none focus:ring-1 focus:ring-brand-orange"
