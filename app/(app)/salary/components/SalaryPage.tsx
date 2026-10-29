@@ -138,14 +138,14 @@ export default function SalaryPage() {
   const totalProjected =
     data?.projections.reduce((sum, item) => sum + item.projectedSalary, 0) ?? 0;
   const totalIncentives = data?.projections.reduce((sum, item) => sum + item.incentiveTotal, 0) ?? 0;
-  function openIncentivePopover(employeeId: string, anchorEl: HTMLButtonElement) {
+  function openIncentivePopover(employeeId: string, anchorEl: HTMLButtonElement, paidEarly = false) {
     const rect = anchorEl.getBoundingClientRect();
     setPopoverAnchor({ top: rect.top, left: rect.left });
     setOpenIncentiveFor(employeeId);
     setDraftType(INCENTIVE_TYPE_OPTIONS[0]);
     setDraftCustomType("");
     setDraftAmount("");
-    setDraftPaidEarly(false);
+    setDraftPaidEarly(paidEarly);
     setDraftError(undefined);
   }
 
@@ -833,6 +833,14 @@ export default function SalaryPage() {
                               className="shrink-0 whitespace-nowrap text-xs font-medium text-brand-orange hover:text-brand-orange/80 transition"
                             >
                               + Add
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Pay incentive early for ${projection.name}`}
+                              onClick={(event) => openIncentivePopover(projection.employeeId, event.currentTarget, true)}
+                              className="shrink-0 whitespace-nowrap text-xs font-medium text-brand-teal hover:text-brand-teal/80 transition"
+                            >
+                              Pay early
                             </button>
                             {detailsFor === projection.employeeId &&
                               detailsAnchor &&
