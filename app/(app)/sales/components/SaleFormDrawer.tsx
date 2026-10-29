@@ -10,7 +10,6 @@ import { useStoreModal } from "@/app/(app)/store-context";
 import { salesRequest } from "../apicall/sales";
 import type { ExpenseItem, SaleForm, SaleRecord } from "@/types/sales";
 import {
-  addOneDay,
   buildEmptyForm,
   buildExpenseItemsFromSale,
   buildFormFromSale,
@@ -41,13 +40,11 @@ const NUMBER_PATTERN = /^\d*\.?\d*$/;
 export function SaleFormDrawer({
   onClose,
   onSaved,
-  onRefresh,
   editSale,
   existingDates,
 }: Readonly<{
   onClose: () => void;
   onSaved: () => void;
-  onRefresh?: () => void;
   editSale?: SaleRecord;
   existingDates: string[];
 }>) {
@@ -130,33 +127,6 @@ export function SaleFormDrawer({
     void (async () => {
       const ok = await saveSale();
       if (ok) requestClose(onSaved);
-    })();
-  }
-
-  function handleSaveAndAddNextDay() {
-    const errors = getValidationErrors();
-    setFieldErrors(errors);
-
-    if (Object.keys(errors).length > 0) return;
-    if (!activeStoreId) {
-      error("Select a store before saving a sale.");
-      return;
-    }
-
-    void (async () => {
-      const ok = await saveSale();
-      if (!ok) return;
-      onRefresh?.();
-      const nextDate = addOneDay(form.date);
-      setForm({ ...buildEmptyForm(), date: nextDate });
-      setExpenseItems([]);
-      setFieldErrors({});
-      setExpensesError(undefined);
-      setEditingExpenseIndex(null);
-      setDraftExpense({ name: "", amount: "" });
-      setDraftExpenseError(undefined);
-      setShowExpensePopover(false);
-      setShowExpenseView(false);
     })();
   }
 
@@ -528,16 +498,6 @@ export function SaleFormDrawer({
           >
             Cancel
           </button>
-          {!editSale && (
-            <button
-              type="button"
-              onClick={handleSaveAndAddNextDay}
-              disabled={saving || Boolean(fieldErrors.date)}
-              className="px-4 py-2 rounded-lg border border-brand-orange text-sm font-medium text-brand-orange hover:bg-brand-orange/10 transition disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {saving ? "Saving…" : "Add Next Day Sale"}
-            </button>
-          )}
           <button
             type="submit"
             form="sale-form"

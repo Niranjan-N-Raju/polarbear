@@ -6,12 +6,6 @@ export function todayISO(): string {
   return localDateValue();
 }
 
-export function addOneDay(date: string): string {
-  const next = new Date(`${date}T00:00:00`);
-  next.setDate(next.getDate() + 1);
-  return localDateValue(next);
-}
-
 export function todayRange(): { from: string; to: string } {
   const today = todayISO();
   return { from: today, to: today };

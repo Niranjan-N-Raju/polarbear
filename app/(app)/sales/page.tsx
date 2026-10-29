@@ -292,7 +292,6 @@ export default function SalesPage() {
             setShowAddSale(false);
             void loadSales();
           }}
-          onRefresh={() => void loadSales()}
         />
       )}
 
