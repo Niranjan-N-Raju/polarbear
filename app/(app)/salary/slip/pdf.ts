@@ -96,6 +96,7 @@ export async function generateSalarySlipPdf(data: SalarySlipData): Promise<void>
       ["Conveyance", "-", "Professional Tax", "-"],
       ["Special Allowance", "-", "Income Tax", "-"],
       ["Other Allowance", "-", "Other Deduction", data.deductions.advanceTotal > 0 ? formatCurrency(data.deductions.advanceTotal) : "-"],
+      ...((data.deductions.paidEarlyIncentiveTotal ?? 0) > 0 ? [["", "", "Incentives already paid", formatCurrency(data.deductions.paidEarlyIncentiveTotal ?? 0)]] : []),
     ],
     foot: [["Gross Earnings", formatCurrency(data.earnings.grossEarnings), "Total Deductions", formatCurrency(data.deductions.totalDeductions)]],
     footStyles: { fontStyle: "bold", fillColor: [245, 240, 230], textColor: [20, 20, 20] },
@@ -112,7 +113,7 @@ export async function generateSalarySlipPdf(data: SalarySlipData): Promise<void>
     head: [["Incentives", "Amount"]],
     body:
       data.incentives.length > 0
-        ? data.incentives.map((incentive) => [incentive.type, formatCurrency(incentive.amount)])
+        ? data.incentives.map((incentive) => [`${incentive.type}${incentive.paidEarly ? " (Paid early)" : ""}`, formatCurrency(incentive.amount)])
         : [["No incentives this period.", "-"]],
     headStyles: { fillColor: [245, 240, 230], textColor: [20, 20, 20] },
   });

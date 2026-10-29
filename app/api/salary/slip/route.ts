@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     Attendance.find({ franchise: franchiseId, employee: employeeId, date: { $gte: range.from, $lte: range.to } })
       .select("date status")
       .lean(),
-    Incentive.find({ franchise: franchiseId, employee: employeeId, period }).select("type amount").lean(),
+    Incentive.find({ franchise: franchiseId, employee: employeeId, period }).select("type amount paidEarly").lean(),
     ExtraDay.find({ franchise: franchiseId, employee: employeeId, period }).select("type days").lean(),
     Advance.find({ franchise: franchiseId, employee: employeeId, period }).select("type amount").lean(),
   ]);
@@ -69,11 +69,12 @@ export async function GET(request: NextRequest) {
 
   const extraDaysTotal = extraDays.reduce((sum, item) => sum + item.days, 0);
   const incentiveTotal = incentives.reduce((sum, item) => sum + item.amount, 0);
+  const paidEarlyIncentiveTotal = roundCurrency(incentives.reduce((sum, item) => sum + (item.paidEarly === true ? item.amount : 0), 0));
   const advanceTotal = advances.reduce((sum, item) => sum + item.amount, 0);
   const salary = employee.salary ?? 0;
   // Gross earnings before incentives/deductions, prorated for the days actually paid this cycle.
   const basicSalary = roundCurrency((salary * (paidDays + extraDaysTotal)) / cycleDates.length);
-  const totalDeductions = advanceTotal;
+  const totalDeductions = roundCurrency(advanceTotal + paidEarlyIncentiveTotal);
   const netPay = basicSalary + incentiveTotal - totalDeductions;
 
   return NextResponse.json({
@@ -111,6 +112,7 @@ export async function GET(request: NextRequest) {
     deductions: {
       advances,
       advanceTotal,
+      paidEarlyIncentiveTotal,
       totalDeductions,
     },
     incentives,

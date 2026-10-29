@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
       employeeId: String(incentive.employee),
       type: incentive.type,
       amount: incentive.amount,
+      paidEarly: incentive.paidEarly === true,
     })),
   });
 }
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
     period?: string;
     type?: string;
     amount?: number;
+    paidEarly?: boolean;
   }>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
@@ -69,6 +71,9 @@ export async function POST(request: NextRequest) {
   if (typeof body.amount !== "number" || !Number.isFinite(body.amount) || body.amount < 0) {
     return NextResponse.json({ message: "Enter a valid amount." }, { status: 400 });
   }
+  if (body.paidEarly !== undefined && typeof body.paidEarly !== "boolean") {
+    return NextResponse.json({ message: "Paid early must be true or false." }, { status: 400 });
+  }
 
   await connectToDatabase();
   const employee = await User.findOne({
@@ -88,6 +93,7 @@ export async function POST(request: NextRequest) {
     period: body.period,
     type,
     amount: body.amount,
+    paidEarly: body.paidEarly === true,
     createdBy: auth.id,
   });
 
@@ -98,6 +104,7 @@ export async function POST(request: NextRequest) {
       employeeId: String(incentive.employee),
       type: incentive.type,
       amount: incentive.amount,
+      paidEarly: incentive.paidEarly === true,
     },
   });
 }

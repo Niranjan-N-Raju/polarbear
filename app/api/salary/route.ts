@@ -65,11 +65,11 @@ export async function GET(request: NextRequest) {
     attendanceByEmployee.set(employeeId, employeeRecords);
   }
 
-  const incentivesByEmployee = new Map<string, { id: string; type: string; amount: number }[]>();
+  const incentivesByEmployee = new Map<string, { id: string; type: string; amount: number; paidEarly: boolean }[]>();
   for (const incentive of incentives) {
     const employeeId = String(incentive.employee);
     const list = incentivesByEmployee.get(employeeId) ?? [];
-    list.push({ id: String(incentive._id), type: incentive.type, amount: incentive.amount });
+    list.push({ id: String(incentive._id), type: incentive.type, amount: incentive.amount, paidEarly: incentive.paidEarly === true });
     incentivesByEmployee.set(employeeId, list);
   }
 
@@ -110,6 +110,7 @@ export async function GET(request: NextRequest) {
     const projectedPaidDays = paidDays + futureDays;
     const employeeIncentives = incentivesByEmployee.get(employeeId) ?? [];
     const incentiveTotal = employeeIncentives.reduce((sum, item) => sum + item.amount, 0);
+    const paidEarlyIncentiveTotal = roundCurrency(employeeIncentives.reduce((sum, item) => sum + (item.paidEarly ? item.amount : 0), 0));
     const employeeExtraDays = extraDaysByEmployee.get(employeeId) ?? [];
     const extraDaysTotal = employeeExtraDays.reduce((sum, item) => sum + item.days, 0);
     const employeeAdvances = advancesByEmployee.get(employeeId) ?? [];
@@ -131,12 +132,13 @@ export async function GET(request: NextRequest) {
       eligibleDays: payableDates.length,
       incentives: employeeIncentives,
       incentiveTotal,
+      paidEarlyIncentiveTotal,
       extraDays: employeeExtraDays,
       extraDaysTotal,
       advances: employeeAdvances,
       advanceTotal,
-      earnedSalary: roundCurrency((salary * (paidDays + extraDaysTotal)) / cycleDays) + incentiveTotal - advanceTotal,
-      projectedSalary: roundCurrency((salary * (projectedPaidDays + extraDaysTotal)) / cycleDays) + incentiveTotal - advanceTotal,
+      earnedSalary: roundCurrency((salary * (paidDays + extraDaysTotal)) / cycleDays) + incentiveTotal - advanceTotal - paidEarlyIncentiveTotal,
+      projectedSalary: roundCurrency((salary * (projectedPaidDays + extraDaysTotal)) / cycleDays) + incentiveTotal - advanceTotal - paidEarlyIncentiveTotal,
     };
   });
 

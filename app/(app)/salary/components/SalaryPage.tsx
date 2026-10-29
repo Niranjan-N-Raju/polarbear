@@ -43,6 +43,7 @@ export default function SalaryPage() {
   const [draftType, setDraftType] = useState<string>(INCENTIVE_TYPE_OPTIONS[0]);
   const [draftCustomType, setDraftCustomType] = useState("");
   const [draftAmount, setDraftAmount] = useState("");
+  const [draftPaidEarly, setDraftPaidEarly] = useState(false);
   const [draftError, setDraftError] = useState<string | undefined>();
   const [savingIncentive, setSavingIncentive] = useState(false);
   const [detailsFor, setDetailsFor] = useState<string | null>(null);
@@ -51,6 +52,7 @@ export default function SalaryPage() {
   const [editType, setEditType] = useState<string>(INCENTIVE_TYPE_OPTIONS[0]);
   const [editCustomType, setEditCustomType] = useState("");
   const [editAmount, setEditAmount] = useState("");
+  const [editPaidEarly, setEditPaidEarly] = useState(false);
   const [editError, setEditError] = useState<string | undefined>();
   const [savingEdit, setSavingEdit] = useState(false);
   const hideDetailsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -143,6 +145,7 @@ export default function SalaryPage() {
     setDraftType(INCENTIVE_TYPE_OPTIONS[0]);
     setDraftCustomType("");
     setDraftAmount("");
+    setDraftPaidEarly(false);
     setDraftError(undefined);
   }
 
@@ -189,6 +192,7 @@ export default function SalaryPage() {
     setEditType(isPredefined ? incentive.type : "Other");
     setEditCustomType(isPredefined ? "" : incentive.type);
     setEditAmount(String(incentive.amount));
+    setEditPaidEarly(incentive.paidEarly === true);
     setEditError(undefined);
   }
 
@@ -209,7 +213,7 @@ export default function SalaryPage() {
       const response = await salaryRequest(`/api/incentives/${incentiveId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, amount }),
+        body: JSON.stringify({ type, amount, paidEarly: editPaidEarly }),
       });
       const result = (await response.json()) as { message?: string };
       if (!response.ok) throw new Error(result.message ?? "Failed to update incentive.");
@@ -236,7 +240,7 @@ export default function SalaryPage() {
       const response = await salaryRequest("/api/incentives", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ franchiseId: activeStoreId, employeeId, period, type, amount }),
+        body: JSON.stringify({ franchiseId: activeStoreId, employeeId, period, type, amount, paidEarly: draftPaidEarly }),
       });
       const result = (await response.json()) as { message?: string };
       if (!response.ok) throw new Error(result.message ?? "Failed to add incentive.");
@@ -561,9 +565,9 @@ export default function SalaryPage() {
           <div className="hidden gap-3 sm:grid sm:grid-cols-4 sm:gap-4">
             {[
               { label: "Monthly payroll", value: totalBase, color: "teal" as const, icon: faIndianRupeeSign },
-              { label: "Earned to date", value: totalEarned, color: "orange" as const, icon: faCircleCheck },
+              { label: "Salary to be paid", value: totalEarned, color: "orange" as const, icon: faCircleCheck },
               { label: "Total incentives", value: totalIncentives, color: "orange" as const, icon: faGift },
-              { label: "Projected payroll", value: totalProjected, color: "teal" as const, icon: faChartLine },
+              { label: "Projected salary due", value: totalProjected, color: "teal" as const, icon: faChartLine },
             ].map((item) => (
               <SummaryCard
                 key={item.label}
@@ -577,9 +581,9 @@ export default function SalaryPage() {
           <MobileSummaryDrawer
             cards={[
               { label: "Monthly payroll", value: formatCurrency(totalBase), color: "teal" as const, icon: faIndianRupeeSign },
-              { label: "Earned to date", value: formatCurrency(totalEarned), color: "orange" as const, icon: faCircleCheck },
+              { label: "Salary to be paid", value: formatCurrency(totalEarned), color: "orange" as const, icon: faCircleCheck },
               { label: "Total incentives", value: formatCurrency(totalIncentives), color: "orange" as const, icon: faGift },
-              { label: "Projected payroll", value: formatCurrency(totalProjected), color: "teal" as const, icon: faChartLine },
+              { label: "Projected salary due", value: formatCurrency(totalProjected), color: "teal" as const, icon: faChartLine },
             ]}
           />
 
@@ -598,7 +602,7 @@ export default function SalaryPage() {
                       <th className="text-left px-5 py-3 font-semibold text-gray-600">Extra Days</th>
                       <th className="text-left px-5 py-3 font-semibold text-gray-600">Incentives</th>
                       <th className="text-left px-5 py-3 font-semibold text-gray-600">Advances</th>
-                      <th className="text-left px-5 py-3 font-semibold text-gray-600">Earned/Projected</th>
+                      <th className="text-left px-5 py-3 font-semibold text-gray-600">Payable/Projected</th>
                       <th className="text-right px-5 py-3 font-semibold text-gray-600">Slip</th>
                     </tr>
                   </thead>
@@ -821,6 +825,7 @@ export default function SalaryPage() {
                               onMouseLeave={scheduleHideDetails}
                             >
                               {formatCurrency(projection.incentiveTotal)}
+                              {(projection.paidEarlyIncentiveTotal ?? 0) > 0 ? <span className="block text-xs text-gray-500">{formatCurrency(projection.paidEarlyIncentiveTotal ?? 0)} paid early</span> : null}
                             </span>
                             <button
                               type="button"
@@ -869,6 +874,7 @@ export default function SalaryPage() {
                                             placeholder="0.00"
                                             className="w-full rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-orange focus:border-brand-orange"
                                           />
+                                          <label className="flex items-center gap-2 text-xs text-gray-700"><input type="checkbox" checked={editPaidEarly} onChange={(event) => setEditPaidEarly(event.target.checked)} disabled={savingEdit} className="accent-brand-orange" />Paid early</label>
                                           {editError && (
                                             <p className="text-xs text-red-600" role="alert">{editError}</p>
                                           )}
@@ -897,6 +903,7 @@ export default function SalaryPage() {
                                         >
                                           <span className="truncate">
                                             {incentive.type}: {formatCurrency(incentive.amount)}
+                                            {incentive.paidEarly ? " (Paid early)" : ""}
                                           </span>
                                           <span className="flex shrink-0 items-center gap-2">
                                             <button
@@ -932,6 +939,8 @@ export default function SalaryPage() {
                                 customType={draftCustomType}
                                 amount={draftAmount}
                                 amountLabel="Amount"
+                                paidEarly={draftPaidEarly}
+                                onPaidEarlyChange={setDraftPaidEarly}
                                 error={draftError}
                                 saving={savingIncentive}
                                 onTypeChange={(value) => { setDraftType(value); setDraftError(undefined); }}

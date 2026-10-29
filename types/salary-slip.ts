@@ -6,6 +6,7 @@ export interface SalarySlipAdvance {
 export interface SalarySlipIncentive {
   type: string;
   amount: number;
+  paidEarly?: boolean;
 }
 
 export interface SalarySlipExtraDay {
@@ -41,6 +42,7 @@ export interface SalarySlipData {
   deductions: {
     advances: SalarySlipAdvance[];
     advanceTotal: number;
+    paidEarlyIncentiveTotal?: number;
     totalDeductions: number;
   };
   incentives: SalarySlipIncentive[];

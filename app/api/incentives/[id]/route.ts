@@ -21,7 +21,7 @@ export async function PUT(
     return NextResponse.json({ message: "A valid incentive id is required." }, { status: 400 });
   }
 
-  const jsonBody = await readJsonObject<{ type?: string; amount?: number }>(request);
+  const jsonBody = await readJsonObject<{ type?: string; amount?: number; paidEarly?: boolean }>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
   const type = (body.type ?? "").trim();
@@ -31,6 +31,9 @@ export async function PUT(
   }
   if (!Number.isFinite(amount) || amount < 0) {
     return NextResponse.json({ message: "A valid amount is required." }, { status: 400 });
+  }
+  if (body.paidEarly !== undefined && typeof body.paidEarly !== "boolean") {
+    return NextResponse.json({ message: "Paid early must be true or false." }, { status: 400 });
   }
 
   await connectToDatabase();
@@ -44,8 +47,9 @@ export async function PUT(
 
   incentive.type = type;
   incentive.amount = amount;
+  if (body.paidEarly !== undefined) incentive.paidEarly = body.paidEarly;
   await incentive.save();
-  return NextResponse.json({ message: "Incentive updated.", id: String(incentive._id), type, amount });
+  return NextResponse.json({ message: "Incentive updated.", id: String(incentive._id), type, amount, paidEarly: incentive.paidEarly === true });
 }
 
 export async function DELETE(

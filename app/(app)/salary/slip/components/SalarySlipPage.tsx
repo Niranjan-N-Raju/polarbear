@@ -123,6 +123,7 @@ export default function SalarySlipPage() {
             <div className="flex justify-between border-b border-gray-200 px-3 py-1.5 text-gray-400"><span>Professional Tax</span><span>—</span></div>
             <div className="flex justify-between border-b border-gray-200 px-3 py-1.5 text-gray-400"><span>Income Tax</span><span>—</span></div>
             <div className="flex justify-between px-3 py-1.5"><span>Other Deduction</span><span>{data.deductions.advanceTotal > 0 ? formatCurrency(data.deductions.advanceTotal) : "—"}</span></div>
+            {(data.deductions.paidEarlyIncentiveTotal ?? 0) > 0 ? <div className="flex justify-between gap-2 border-t border-gray-200 px-3 py-1.5"><span>Incentives already paid</span><span>{formatCurrency(data.deductions.paidEarlyIncentiveTotal ?? 0)}</span></div> : null}
           </div>
         </div>
         <div className="flex border-b border-gray-400 font-semibold">
@@ -137,7 +138,7 @@ export default function SalarySlipPage() {
           ) : (
             data.incentives.map((incentive, index) => (
               <div key={`${incentive.type}-${index}`} className="flex justify-between border-b border-gray-200 px-3 py-1.5 last:border-0">
-                <span>{incentive.type}</span>
+                <span>{incentive.type}{incentive.paidEarly ? " (Paid early)" : ""}</span>
                 <span>{formatCurrency(incentive.amount)}</span>
               </div>
             ))

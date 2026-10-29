@@ -2,6 +2,7 @@ export interface IncentiveEntry {
   id: string;
   type: string;
   amount: number;
+  paidEarly?: boolean;
 }
 
 export interface ExtraDayEntry {
@@ -30,6 +31,7 @@ export interface SalaryProjection {
   eligibleDays: number;
   incentives: IncentiveEntry[];
   incentiveTotal: number;
+  paidEarlyIncentiveTotal?: number;
   extraDays: ExtraDayEntry[];
   extraDaysTotal: number;
   advances: AdvanceEntry[];
