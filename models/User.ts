@@ -1,5 +1,6 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 import { encryptField } from "@/lib/crypto";
+import { nextEmployeeCode } from "@/lib/employee-code";
 
 interface IUserDocumentFile {
   fileId: mongoose.Types.ObjectId;
@@ -12,6 +13,7 @@ export interface IUser extends Document {
   email: string;
   password: string; // stored as bcrypt hash
   name: string;
+  employeeCode?: string;
   role: "admin" | "sub_admin" | "franchise_admin" | "employee";
   isActive: boolean;
   sessionVersion: number;
@@ -60,6 +62,7 @@ const UserSchema: Schema<IUser> = new Schema(
       required: true,
       trim: true,
     },
+    employeeCode: { type: String, immutable: true, match: /^EMP\d{4,}$/ },
     role: {
       type: String,
       enum: ["admin", "sub_admin", "franchise_admin", "employee"],
@@ -119,6 +122,7 @@ const UserSchema: Schema<IUser> = new Schema(
 );
 
 // Database indexes for query performance
+UserSchema.index({ employeeCode: 1 }, { unique: true, partialFilterExpression: { employeeCode: { $type: "string" } } });
 UserSchema.index({ franchises: 1 });
 UserSchema.index({ createdBy: 1 });
 UserSchema.index({ role: 1 });
@@ -141,6 +145,10 @@ const SENSITIVE_FIELDS = [
   "bankIfsc",
   "bankBranch",
 ] as const;
+
+UserSchema.pre("save", async function assignEmployeeCode() {
+  if (this.isNew && this.role === "employee" && !this.employeeCode) this.employeeCode = await nextEmployeeCode();
+});
 
 UserSchema.pre("save", function (next) {
   for (const field of SENSITIVE_FIELDS) {

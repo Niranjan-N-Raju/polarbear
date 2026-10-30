@@ -146,6 +146,7 @@ export default function EmployeesPage() {
     const matchesSearch =
       !normalizedSearch ||
       employee.name.toLowerCase().includes(normalizedSearch) ||
+      employee.employeeCode?.toLowerCase().includes(normalizedSearch) ||
       employee.phone?.toLowerCase().includes(normalizedSearch);
     const matchesStatus =
       employeeTab === "active"
@@ -232,7 +233,7 @@ export default function EmployeesPage() {
                 type="search"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search by name or phone"
+                placeholder="Search by employee ID, name or phone"
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-brand-orange focus:outline-none focus:ring-1 focus:ring-brand-orange"
               />
             </label>
@@ -298,6 +299,7 @@ export default function EmployeesPage() {
                             </span>
                           )}
                         </div>
+                        {emp.employeeCode ? <p className="mt-1 text-xs font-normal text-gray-500">Employee ID: {emp.employeeCode}</p> : null}
                       </td>
                       <td className="px-5 py-3.5 text-gray-600">
                         {emp.phone?.trim() ? emp.phone : "—"}

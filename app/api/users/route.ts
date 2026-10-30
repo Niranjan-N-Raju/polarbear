@@ -104,6 +104,7 @@ export async function GET(request: NextRequest) {
   const result = users.map((u) => ({
     _id: String(u._id),
     name: u.name,
+    employeeCode: u.employeeCode,
     email: u.email,
     phone: u.phone,
     position: u.position,

@@ -1,5 +1,6 @@
 export interface Employee {
   _id: string;
+  employeeCode?: string;
   name: string;
   phone?: string;
   position?: string;
