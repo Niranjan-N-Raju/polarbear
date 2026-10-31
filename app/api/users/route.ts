@@ -17,6 +17,7 @@ import { validateCsrf } from "@/lib/csrf";
 import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
 import { createUserBodySchema } from "@/lib/validation";
 import { auditLog } from "@/lib/audit-log";
+import { nextEmployeeCode } from "@/lib/employee-code";
 
 /**
  * GET /api/users?franchiseId=xxx&page=1&limit=50
@@ -579,8 +580,8 @@ export async function POST(request: NextRequest) {
   const safeName = name?.trim() ?? "";
 
   try {
-    const user = await User.create(
-      buildCreateUserDocument({
+    const user = await User.create({
+      ...buildCreateUserDocument({
         name: safeName,
         resolvedEmail,
         hashedPassword,
@@ -604,7 +605,8 @@ export async function POST(request: NextRequest) {
         bankBranch,
         dateOfJoining,
       }),
-    );
+      ...(role === "employee" ? { employeeCode: await nextEmployeeCode() } : {}),
+    });
 
     auditLog("user.created", {
       actorId: auth.id,
@@ -619,6 +621,7 @@ export async function POST(request: NextRequest) {
         message: "User created successfully.",
         user: {
           _id: String(user._id),
+          employeeCode: user.employeeCode,
           name: user.name,
           email: user.email,
           role: user.role,
