@@ -288,7 +288,7 @@ export default function EmployeesPage() {
                     >
                       <td className="px-5 py-3.5 font-medium text-gray-900">
                         <div className="flex items-center gap-2">
-                          <span>{emp.name}</span>
+                          <span>{emp.name}{emp.employeeCode ? ` (${emp.employeeCode})` : ''}</span>
                           {isBirthdayToday(emp) && (
                             <span
                               className="text-brand-orange"
@@ -299,7 +299,6 @@ export default function EmployeesPage() {
                             </span>
                           )}
                         </div>
-                        {emp.employeeCode ? <p className="mt-1 text-xs font-normal text-gray-500">Employee ID: {emp.employeeCode}</p> : null}
                       </td>
                       <td className="px-5 py-3.5 text-gray-600">
                         {emp.phone?.trim() ? emp.phone : "—"}
