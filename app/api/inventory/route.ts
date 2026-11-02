@@ -173,18 +173,16 @@ export async function PATCH(request: NextRequest) {
     try {
       // Keep the stock decrement and disposal record atomic to prevent partial dumps.
       await session.withTransaction(async () => {
-        const dumped = await db
-          .collection("inventory_items")
-          .findOneAndUpdate(
-            {
-              _id: itemId,
-              storeId: access.storeId,
-              quantity: { $gt: 0 },
-              expiryDate: { $lt: today },
-            },
-            { $set: { quantity: 0 } },
-            { returnDocument: "after", session }
-          );
+        const dumped = await db.collection("inventory_items").findOneAndUpdate(
+          {
+            _id: itemId,
+            storeId: access.storeId,
+            quantity: { $gt: 0 },
+            expiryDate: { $lt: today },
+          },
+          { $set: { quantity: 0 } },
+          { returnDocument: "after", session }
+        );
         if (!dumped) throw new Error("DUMP_RACE");
         await db.collection("dumped_inventory").insertOne(
           {
