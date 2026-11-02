@@ -21,7 +21,9 @@ export type AuditAction =
   | "store.logo.uploaded"
   | "store.logo.removed"
   | "user.unarchived"
-  | "user.archived";
+  | "user.archived"
+  | "employee.promoted"
+  | "employee.salary.hiked";
 
 interface AuditEntry {
   timestamp: string;
