@@ -16,7 +16,7 @@ config({ path: resolve(process.cwd(), ".env.local") });
 // Require an explicit local environment before allowing destructive seeding.
 if (process.env.NODE_ENV !== "development") {
   console.error(
-    "ERROR: Set NODE_ENV=development to run this destructive seed script.",
+    "ERROR: Set NODE_ENV=development to run this destructive seed script."
   );
   process.exit(1);
 }
@@ -36,7 +36,7 @@ if (!MONGODB_DB) {
 }
 if (!process.argv.includes(`--confirm-wipe=${MONGODB_DB}`)) {
   console.error(
-    `ERROR: Seeding deletes all users and stores. Re-run with --confirm-wipe=${MONGODB_DB} to confirm the target database.`,
+    `ERROR: Seeding deletes all users and stores. Re-run with --confirm-wipe=${MONGODB_DB} to confirm the target database.`
   );
   process.exit(1);
 }
@@ -45,7 +45,7 @@ const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@pb.com";
 const adminPassword = process.env.SEED_ADMIN_PASSWORD;
 if (!adminPassword) {
   console.error(
-    "ERROR: SEED_ADMIN_PASSWORD is not set. Add it to .env.local before seeding.",
+    "ERROR: SEED_ADMIN_PASSWORD is not set. Add it to .env.local before seeding."
   );
   process.exit(1);
 }
@@ -82,7 +82,7 @@ const FranchiseSchema = new mongoose.Schema(
     },
     isActive: { type: Boolean, default: true },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 const User = mongoose.models.User ?? mongoose.model("User", UserSchema);

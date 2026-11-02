@@ -48,10 +48,10 @@ export default function AttendancePage() {
   const [bulkToDate, setBulkToDate] = useState(selectedDate);
   const [detailsDate, setDetailsDate] = useState<string | null>(null);
   const [draggedEmployeeId, setDraggedEmployeeId] = useState<string | null>(
-    null,
+    null
   );
   const [dragOverStatus, setDragOverStatus] = useState<AttendanceStatus | null>(
-    null,
+    null
   );
   const {
     employees,
@@ -76,72 +76,72 @@ export default function AttendancePage() {
     const dayRecords = records.filter(
       (record) =>
         record.date === date &&
-        (employeeFilter === "all" || record.employeeId === employeeFilter),
+        (employeeFilter === "all" || record.employeeId === employeeFilter)
     );
     return STATUS_OPTIONS.reduce(
       (summary, status) => {
         summary[status] = dayRecords.filter(
-          (record) => record.status === status,
+          (record) => record.status === status
         ).length;
         return summary;
       },
       { Present: 0, "Week Off": 0, Absent: 0 } as Record<
         AttendanceStatus,
         number
-      >,
+      >
     );
   }
   // `records` are already scoped to the current cycle range by useAttendanceData, so no date filter is needed here.
   function periodSummary() {
     const periodRecords = records.filter(
-      (record) => employeeFilter === "all" || record.employeeId === employeeFilter,
+      (record) =>
+        employeeFilter === "all" || record.employeeId === employeeFilter
     );
     return STATUS_OPTIONS.reduce(
       (summary, status) => {
         summary[status] = periodRecords.filter(
-          (record) => record.status === status,
+          (record) => record.status === status
         ).length;
         return summary;
       },
       { Present: 0, "Week Off": 0, Absent: 0 } as Record<
         AttendanceStatus,
         number
-      >,
+      >
     );
   }
   function dayDetails(date: string) {
-    return STATUS_OPTIONS.reduce(
-      (grouped, status) => {
-        grouped[status] = records
-          .filter((record) => record.date === date && record.status === status)
-          .map((record): AttendancePerson => {
-            const employee = employees.find(
-              (item) => item._id === record.employeeId,
-            );
-            return {
-              employeeId: record.employeeId,
-              name: employee?.name ?? "Unknown",
-              comment: record.comment,
-              archived: employee?.isActive === false,
-            };
-          })
-          .sort((a, b) => a.name.localeCompare(b.name));
-        return grouped;
-      },
-      {} as Record<AttendanceStatus, AttendancePerson[]>,
-    );
+    return STATUS_OPTIONS.reduce((grouped, status) => {
+      grouped[status] = records
+        .filter((record) => record.date === date && record.status === status)
+        .map((record): AttendancePerson => {
+          const employee = employees.find(
+            (item) => item._id === record.employeeId
+          );
+          return {
+            employeeId: record.employeeId,
+            name: employee?.name ?? "Unknown",
+            comment: record.comment,
+            archived: employee?.isActive === false,
+          };
+        })
+        .sort((a, b) => a.name.localeCompare(b.name));
+      return grouped;
+    }, {} as Record<AttendanceStatus, AttendancePerson[]>);
   }
   // Eligible employees with no attendance record for this date — unmarked, pending a drag into a status.
   function unmarkedForDate(date: string) {
     const markedIds = new Set(
-      records.filter((record) => record.date === date).map((record) => record.employeeId),
+      records
+        .filter((record) => record.date === date)
+        .map((record) => record.employeeId)
     );
     return employees
       .filter(
         (employee) =>
           (employeeFilter === "all" || employee._id === employeeFilter) &&
           !markedIds.has(employee._id) &&
-          isEmployeeActiveOn(employee, date),
+          isEmployeeActiveOn(employee, date)
       )
       .map(
         (employee): AttendancePerson => ({
@@ -149,7 +149,7 @@ export default function AttendancePage() {
           name: employee.name,
           comment: "",
           archived: employee.isActive === false,
-        }),
+        })
       )
       .sort((a, b) => a.name.localeCompare(b.name));
   }
@@ -173,13 +173,15 @@ export default function AttendancePage() {
       current.filter((id) => {
         const employee = employees.find((item) => item._id === id);
         return employee ? isEmployeeActiveOn(employee, nextDate) : false;
-      }),
+      })
     );
   }
   // Keep the "To" date from silently becoming an invalid stale value if "From" moves past it.
   function updateBulkFromDate(nextFromDate: string) {
     setBulkFromDate(nextFromDate);
-    setBulkToDate((currentTo) => (nextFromDate > currentTo ? nextFromDate : currentTo));
+    setBulkToDate((currentTo) =>
+      nextFromDate > currentTo ? nextFromDate : currentTo
+    );
   }
   function goToMonth(nextMonth: string) {
     setMonth(nextMonth);
@@ -188,7 +190,7 @@ export default function AttendancePage() {
       ? periodForDate(today, cycle.type, cycle.startDay)
       : monthValue(today);
     setSelectedDate(
-      todayPeriod === nextMonth ? localDateValue(today) : `${nextMonth}-01`,
+      todayPeriod === nextMonth ? localDateValue(today) : `${nextMonth}-01`
     );
   }
   function moveMonth(amount: number) {
@@ -203,23 +205,59 @@ export default function AttendancePage() {
         ? periodForDate(
             new Date(`${lastDate}T00:00:00`),
             cycle.type,
-            cycle.startDay,
+            cycle.startDay
           )
-        : lastDate.slice(0, 7),
+        : lastDate.slice(0, 7)
     );
   }
   const daySummaryCounts = daySummary(selectedDate);
   const summaryCards = [
-    { label: "Present" as const, value: daySummaryCounts.Present, color: "teal" as const, icon: faCircleCheck, subtitle: `on ${formatDate(selectedDate)}` },
-    { label: "Week Off" as const, value: daySummaryCounts["Week Off"], color: "orange" as const, icon: faCalendarDay, subtitle: `on ${formatDate(selectedDate)}` },
-    { label: "Absent" as const, value: daySummaryCounts.Absent, color: "orange" as const, icon: faCircleXmark, subtitle: `on ${formatDate(selectedDate)}` },
+    {
+      label: "Present" as const,
+      value: daySummaryCounts.Present,
+      color: "teal" as const,
+      icon: faCircleCheck,
+      subtitle: `on ${formatDate(selectedDate)}`,
+    },
+    {
+      label: "Week Off" as const,
+      value: daySummaryCounts["Week Off"],
+      color: "orange" as const,
+      icon: faCalendarDay,
+      subtitle: `on ${formatDate(selectedDate)}`,
+    },
+    {
+      label: "Absent" as const,
+      value: daySummaryCounts.Absent,
+      color: "orange" as const,
+      icon: faCircleXmark,
+      subtitle: `on ${formatDate(selectedDate)}`,
+    },
   ];
   const periodSummaryCounts = periodSummary();
   const periodLabel = cycle ? cycleRangeLabel(cycle) : monthLabel(month);
   const periodSummaryCards = [
-    { label: "Present (period)" as const, value: periodSummaryCounts.Present, color: "teal" as const, icon: faCircleCheck, subtitle: periodLabel },
-    { label: "Week Off (period)" as const, value: periodSummaryCounts["Week Off"], color: "orange" as const, icon: faCalendarDay, subtitle: periodLabel },
-    { label: "Absent (period)" as const, value: periodSummaryCounts.Absent, color: "orange" as const, icon: faCircleXmark, subtitle: periodLabel },
+    {
+      label: "Present (period)" as const,
+      value: periodSummaryCounts.Present,
+      color: "teal" as const,
+      icon: faCircleCheck,
+      subtitle: periodLabel,
+    },
+    {
+      label: "Week Off (period)" as const,
+      value: periodSummaryCounts["Week Off"],
+      color: "orange" as const,
+      icon: faCalendarDay,
+      subtitle: periodLabel,
+    },
+    {
+      label: "Absent (period)" as const,
+      value: periodSummaryCounts.Absent,
+      color: "orange" as const,
+      icon: faCircleXmark,
+      subtitle: periodLabel,
+    },
   ];
 
   return (
@@ -247,7 +285,9 @@ export default function AttendancePage() {
               className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-orange focus:outline-none focus:ring-1 focus:ring-brand-orange sm:w-auto"
             >
               <option value="all">All employees</option>
-                {employees.filter((employee) => employee.isActive !== false).map((employee) => (
+              {employees
+                .filter((employee) => employee.isActive !== false)
+                .map((employee) => (
                   <option key={employee._id} value={employee._id}>
                     {employee.name}
                   </option>
@@ -257,7 +297,11 @@ export default function AttendancePage() {
           <button
             type="button"
             onClick={() => setShowWeeklyRoster(true)}
-            disabled={!activeStoreId || employees.filter((employee) => employee.isActive !== false).length === 0}
+            disabled={
+              !activeStoreId ||
+              employees.filter((employee) => employee.isActive !== false)
+                .length === 0
+            }
             className="shrink-0 whitespace-nowrap rounded-lg border border-brand-orange px-4 py-2 text-sm font-medium text-brand-orange hover:bg-brand-peach disabled:cursor-not-allowed disabled:opacity-60"
           >
             Weekly Roster
@@ -359,7 +403,7 @@ export default function AttendancePage() {
             selectedEmployeeIds,
             bulkStatus,
             bulkComment,
-            () => afterSave(bulkDate),
+            () => afterSave(bulkDate)
           )
         }
         onSaveDays={() =>
@@ -369,7 +413,7 @@ export default function AttendancePage() {
             bulkToDate,
             bulkStatus,
             bulkComment,
-            (lastDate) => afterSave(lastDate),
+            (lastDate) => afterSave(lastDate)
           )
         }
       />
@@ -409,7 +453,7 @@ export default function AttendancePage() {
           }}
           onDragLeave={(status) =>
             setDragOverStatus((current) =>
-              current === status ? null : current,
+              current === status ? null : current
             )
           }
           onDrop={(event, status) => {

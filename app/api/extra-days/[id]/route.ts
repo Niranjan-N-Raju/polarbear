@@ -8,7 +8,7 @@ import { getAuthorizedStoreAdminId, requireAuth } from "@/lib/api-auth";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
@@ -18,25 +18,39 @@ export async function PUT(
 
   const { id } = await params;
   if (!mongoose.isValidObjectId(id)) {
-    return NextResponse.json({ message: "A valid extra day id is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid extra day id is required." },
+      { status: 400 }
+    );
   }
 
-  const jsonBody = await readJsonObject<{ type?: string; days?: number }>(request);
+  const jsonBody = await readJsonObject<{ type?: string; days?: number }>(
+    request
+  );
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
   const type = (body.type ?? "").trim();
   const days = Number(body.days);
   if (!type) {
-    return NextResponse.json({ message: "A valid type is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid type is required." },
+      { status: 400 }
+    );
   }
   if (!Number.isFinite(days) || days < 0) {
-    return NextResponse.json({ message: "A valid number of days is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid number of days is required." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
   const extraDay = await ExtraDay.findById(id);
   if (!extraDay) {
-    return NextResponse.json({ message: "Extra days entry not found." }, { status: 404 });
+    return NextResponse.json(
+      { message: "Extra days entry not found." },
+      { status: 404 }
+    );
   }
   if (!(await getAuthorizedStoreAdminId(auth, String(extraDay.franchise)))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
@@ -45,12 +59,17 @@ export async function PUT(
   extraDay.type = type;
   extraDay.days = days;
   await extraDay.save();
-  return NextResponse.json({ message: "Extra days updated.", id: String(extraDay._id), type, days });
+  return NextResponse.json({
+    message: "Extra days updated.",
+    id: String(extraDay._id),
+    type,
+    days,
+  });
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
@@ -60,13 +79,19 @@ export async function DELETE(
 
   const { id } = await params;
   if (!mongoose.isValidObjectId(id)) {
-    return NextResponse.json({ message: "A valid extra day id is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid extra day id is required." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
   const extraDay = await ExtraDay.findById(id).lean();
   if (!extraDay) {
-    return NextResponse.json({ message: "Extra days entry not found." }, { status: 404 });
+    return NextResponse.json(
+      { message: "Extra days entry not found." },
+      { status: 404 }
+    );
   }
   if (!(await getAuthorizedStoreAdminId(auth, String(extraDay.franchise)))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });

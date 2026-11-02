@@ -16,8 +16,11 @@ export async function POST(request: NextRequest) {
     if (verified) {
       await connectToDatabase();
       await User.updateOne(
-        { _id: verified.payload.id, sessionVersion: verified.payload.sessionVersion },
-        { $inc: { sessionVersion: 1 } },
+        {
+          _id: verified.payload.id,
+          sessionVersion: verified.payload.sessionVersion,
+        },
+        { $inc: { sessionVersion: 1 } }
       );
     }
   } catch (error) {

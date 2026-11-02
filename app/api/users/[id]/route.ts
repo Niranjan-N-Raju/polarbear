@@ -33,7 +33,7 @@ function isAdultDate(value: string): boolean {
 /** GET /api/users/:id — return editable user details */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
@@ -65,24 +65,24 @@ export async function GET(
 async function validatePatchBody(
   auth: AuthInfo,
   role: string | undefined,
-  franchiseIds: string[] | undefined,
+  franchiseIds: string[] | undefined
 ): Promise<NextResponse | null> {
   if (role && !getAllowedAssignableRoles(auth.role).includes(role)) {
     return NextResponse.json(
       { message: "You are not allowed to assign this role." },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
   if (!isGlobalRole(auth.role) && franchiseIds !== undefined) {
     const allowedIds = await getAllowedFranchiseIdsForCaller(auth);
     const unauthorised = franchiseIds.filter(
-      (fid) => !(allowedIds ?? []).includes(fid),
+      (fid) => !(allowedIds ?? []).includes(fid)
     );
     if (unauthorised.length > 0) {
       return NextResponse.json(
         { message: "You can only assign users to your own franchises." },
-        { status: 403 },
+        { status: 403 }
       );
     }
   }
@@ -93,7 +93,7 @@ async function validatePatchBody(
 /** PATCH /api/users/:id */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // CSRF protection
   const csrfError = validateCsrf(request);
@@ -116,7 +116,7 @@ export async function PATCH(
   if (!parsed.success) {
     return NextResponse.json(
       { message: parsed.error.issues[0]?.message ?? "Invalid input." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -131,7 +131,7 @@ export async function PATCH(
   if (auth.role === "sub_admin" && targetRole === "admin") {
     return NextResponse.json(
       { message: "You cannot modify super admin data." },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -168,8 +168,18 @@ export async function PATCH(
   if (!target) {
     return NextResponse.json({ message: "User not found." }, { status: 404 });
   }
-  if (target.salaryRevisions?.length && salary !== undefined && salary !== target.salary) {
-    return NextResponse.json({ message: "Use Salary hike to change salary after a hike has been recorded." }, { status: 400 });
+  if (
+    target.salaryRevisions?.length &&
+    salary !== undefined &&
+    salary !== target.salary
+  ) {
+    return NextResponse.json(
+      {
+        message:
+          "Use Salary hike to change salary after a hike has been recorded.",
+      },
+      { status: 400 }
+    );
   }
 
   // franchise_admin and employee must always be assigned to at least one store.
@@ -177,7 +187,7 @@ export async function PATCH(
   if (effectiveRole === "employee" && phone && !/^\d{10}$/.test(phone)) {
     return NextResponse.json(
       { message: "Phone number must be exactly 10 digits." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (
@@ -187,7 +197,7 @@ export async function PATCH(
   ) {
     return NextResponse.json(
       { message: "Emergency contact number must be exactly 10 digits." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (
@@ -197,7 +207,7 @@ export async function PATCH(
   ) {
     return NextResponse.json(
       { message: "Employees must be at least 18 years old." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (
@@ -206,26 +216,35 @@ export async function PATCH(
   ) {
     return NextResponse.json(
       { message: "Store admin must be assigned to at least one store." },
-      { status: 400 },
+      { status: 400 }
     );
   }
-  if (effectiveRole === "employee" && franchiseIds !== undefined && franchiseIds.length !== 1) {
+  if (
+    effectiveRole === "employee" &&
+    franchiseIds !== undefined &&
+    franchiseIds.length !== 1
+  ) {
     return NextResponse.json(
       { message: "An employee must be assigned to exactly one store." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
-  if (effectiveRole === "employee" && position && position !== target.position) {
+  if (
+    effectiveRole === "employee" &&
+    position &&
+    position !== target.position
+  ) {
     const franchiseId = franchiseIds?.[0] ?? String(target.franchises[0] ?? "");
     const franchise = franchiseId
       ? await Franchise.findById(franchiseId).select("positions").lean()
       : null;
-    const configuredPositions = franchise?.positions ?? DEFAULT_POSITION_OPTIONS;
+    const configuredPositions =
+      franchise?.positions ?? DEFAULT_POSITION_OPTIONS;
     if (!configuredPositions.includes(position)) {
       return NextResponse.json(
         { message: "Select a position configured for this store." },
-        { status: 400 },
+        { status: 400 }
       );
     }
   }
@@ -247,28 +266,35 @@ export async function PATCH(
   if (emergencyContactRelationship !== undefined) {
     update.emergencyContactRelationship = emergencyContactRelationship;
   }
-  if (actualDob !== undefined) update.actualDob = actualDob ? new Date(actualDob) : null;
-  if (dobInRecords !== undefined) update.dobInRecords = dobInRecords ? new Date(dobInRecords) : null;
+  if (actualDob !== undefined)
+    update.actualDob = actualDob ? new Date(actualDob) : null;
+  if (dobInRecords !== undefined)
+    update.dobInRecords = dobInRecords ? new Date(dobInRecords) : null;
   if (aadharNumber !== undefined) update.aadharNumber = aadharNumber;
-  if (panNumber !== undefined) update.panNumber = panNumber.trim().toUpperCase();
-  if (bankAccountNumber !== undefined) update.bankAccountNumber = bankAccountNumber;
+  if (panNumber !== undefined)
+    update.panNumber = panNumber.trim().toUpperCase();
+  if (bankAccountNumber !== undefined)
+    update.bankAccountNumber = bankAccountNumber;
   if (bankName !== undefined) update.bankName = bankName;
   if (bankIfsc !== undefined) update.bankIfsc = bankIfsc.trim().toUpperCase();
   if (bankBranch !== undefined) update.bankBranch = bankBranch;
-  if (dateOfJoining !== undefined) update.dateOfJoining = dateOfJoining ? new Date(dateOfJoining) : null;
+  if (dateOfJoining !== undefined)
+    update.dateOfJoining = dateOfJoining ? new Date(dateOfJoining) : null;
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json(
       { message: "No fields to update." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   const currentFranchiseIds = target.franchises.map(String);
-  const assignmentsChanged = franchiseIds !== undefined && (
-    currentFranchiseIds.length !== franchiseIds.length ||
-    currentFranchiseIds.some((franchiseId) => !franchiseIds.includes(franchiseId))
-  );
+  const assignmentsChanged =
+    franchiseIds !== undefined &&
+    (currentFranchiseIds.length !== franchiseIds.length ||
+      currentFranchiseIds.some(
+        (franchiseId) => !franchiseIds.includes(franchiseId)
+      ));
   if ((role !== undefined && role !== target.role) || assignmentsChanged) {
     target.sessionVersion = (target.sessionVersion ?? 0) + 1;
   }
@@ -299,7 +325,7 @@ export async function PATCH(
 /** PUT /api/users/:id — restore an archived employee */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
@@ -316,7 +342,10 @@ export async function PUT(
 
   const targetRole = await getTargetUserRole(id);
   if (targetRole !== "employee") {
-    return NextResponse.json({ message: "Employee not found." }, { status: 404 });
+    return NextResponse.json(
+      { message: "Employee not found." },
+      { status: 404 }
+    );
   }
   if (!(await canManageTargetUser(auth, id))) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
@@ -324,11 +353,18 @@ export async function PUT(
 
   const restored = await User.findByIdAndUpdate(
     id,
-    { $set: { isActive: true }, $unset: { archivedAt: "" }, $inc: { sessionVersion: 1 } },
-    { new: true },
+    {
+      $set: { isActive: true },
+      $unset: { archivedAt: "" },
+      $inc: { sessionVersion: 1 },
+    },
+    { new: true }
   ).lean();
   if (!restored) {
-    return NextResponse.json({ message: "Employee not found." }, { status: 404 });
+    return NextResponse.json(
+      { message: "Employee not found." },
+      { status: 404 }
+    );
   }
 
   auditLog("user.unarchived", {
@@ -344,7 +380,7 @@ export async function PUT(
 /** DELETE /api/users/:id */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   // CSRF protection
   const csrfError = validateCsrf(request);
@@ -362,7 +398,7 @@ export async function DELETE(
   if (id === auth.id) {
     return NextResponse.json(
       { message: "You cannot delete your own account." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -377,7 +413,7 @@ export async function DELETE(
   if (auth.role === "sub_admin" && targetRole === "admin") {
     return NextResponse.json(
       { message: "You cannot modify super admin data." },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -388,14 +424,23 @@ export async function DELETE(
   if (targetRole === "employee") {
     let archivedAt = new Date();
     // The body is optional; without a valid JSON body the employee is archived as of now.
-    const body = (await readJsonBody(request, 10_000)) as { exitDate?: unknown } | null;
-    const exitDate = body && typeof body === "object" ? body.exitDate : undefined;
+    const body = (await readJsonBody(request, 10_000)) as {
+      exitDate?: unknown;
+    } | null;
+    const exitDate =
+      body && typeof body === "object" ? body.exitDate : undefined;
     if (exitDate !== undefined && exitDate !== null && exitDate !== "") {
       if (typeof exitDate !== "string" || !isValidDate(exitDate)) {
-        return NextResponse.json({ message: "A valid exit date is required." }, { status: 400 });
+        return NextResponse.json(
+          { message: "A valid exit date is required." },
+          { status: 400 }
+        );
       }
       if (exitDate > businessDateValue()) {
-        return NextResponse.json({ message: "Exit date cannot be in the future." }, { status: 400 });
+        return NextResponse.json(
+          { message: "Exit date cannot be in the future." },
+          { status: 400 }
+        );
       }
       const [year, month, day] = exitDate.split("-").map(Number);
       // Employee stays "active" through their exit date; archivedAt marks the first inactive day.
@@ -405,7 +450,7 @@ export async function DELETE(
     const archived = await User.findByIdAndUpdate(
       id,
       { $set: { isActive: false, archivedAt }, $inc: { sessionVersion: 1 } },
-      { new: true },
+      { new: true }
     ).lean();
     if (!archived) {
       return NextResponse.json({ message: "User not found." }, { status: 404 });

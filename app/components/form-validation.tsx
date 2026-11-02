@@ -3,7 +3,7 @@ export const INVALID_FIELD_CLASS =
 
 export function fieldClass(
   hasError: boolean,
-  validClass = "border-gray-300 focus:border-brand-orange focus:ring-brand-orange/50",
+  validClass = "border-gray-300 focus:border-brand-orange focus:ring-brand-orange/50"
 ): string {
   return hasError ? INVALID_FIELD_CLASS : validClass;
 }

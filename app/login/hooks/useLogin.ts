@@ -34,10 +34,14 @@ export function useLogin() {
     }
     if (result.success) {
       const queryNext = getSafeNextPath(searchParams.get("next"));
-      const storedNext = getSafeNextPath(globalThis.window.sessionStorage.getItem("em_return_to"));
+      const storedNext = getSafeNextPath(
+        globalThis.window.sessionStorage.getItem("em_return_to")
+      );
       globalThis.window.sessionStorage.removeItem("em_return_to");
       globalThis.window.sessionStorage.setItem("em_login_success_toast", "1");
-      globalThis.window.location.replace(queryNext ?? storedNext ?? "/dashboard");
+      globalThis.window.location.replace(
+        queryNext ?? storedNext ?? "/dashboard"
+      );
       return;
     }
 

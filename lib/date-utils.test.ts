@@ -1,5 +1,9 @@
 import { afterEach, describe, it, expect, vi } from "vitest";
-import { currentMonthRange, datesBetween, localDateValue } from "@/lib/date-utils";
+import {
+  currentMonthRange,
+  datesBetween,
+  localDateValue,
+} from "@/lib/date-utils";
 import { enumerateDates } from "@/app/(app)/attendance/utils";
 
 describe("currentMonthRange", () => {

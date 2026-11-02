@@ -10,7 +10,7 @@ export default function UnsavedChangesGuard() {
   const router = useRouter();
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(
-    null,
+    null
   );
 
   const handleLeave = useCallback(() => {
@@ -99,7 +99,7 @@ export default function UnsavedChangesGuard() {
       document.removeEventListener("click", markCleanOnExplicitReset, true);
       globalThis.removeEventListener(
         "unsaved:clear",
-        markCleanOnExternalSignal,
+        markCleanOnExternalSignal
       );
       observer.disconnect();
     };

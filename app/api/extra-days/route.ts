@@ -17,7 +17,10 @@ export async function GET(request: NextRequest) {
   const franchiseId = params.get("franchiseId") ?? "";
   const period = params.get("period") ?? "";
   if (!PERIOD_PATTERN.test(period)) {
-    return NextResponse.json({ message: "A valid period is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid period is required." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
@@ -25,7 +28,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
 
-  const extraDays = await ExtraDay.find({ franchise: franchiseId, period }).lean();
+  const extraDays = await ExtraDay.find({
+    franchise: franchiseId,
+    period,
+  }).lean();
   return NextResponse.json({
     extraDays: extraDays.map((extraDay) => ({
       id: String(extraDay._id),
@@ -57,17 +63,33 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
   if (!body.employeeId || !mongoose.isValidObjectId(body.employeeId)) {
-    return NextResponse.json({ message: "A valid employee is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid employee is required." },
+      { status: 400 }
+    );
   }
   if (!body.period || !PERIOD_PATTERN.test(body.period)) {
-    return NextResponse.json({ message: "A valid period is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid period is required." },
+      { status: 400 }
+    );
   }
   const type = body.type?.trim() ?? "";
   if (!type || type.length > 100) {
-    return NextResponse.json({ message: "Enter a reason for the extra days." }, { status: 400 });
+    return NextResponse.json(
+      { message: "Enter a reason for the extra days." },
+      { status: 400 }
+    );
   }
-  if (typeof body.days !== "number" || !Number.isFinite(body.days) || body.days < 0) {
-    return NextResponse.json({ message: "Enter a valid number of days." }, { status: 400 });
+  if (
+    typeof body.days !== "number" ||
+    !Number.isFinite(body.days) ||
+    body.days < 0
+  ) {
+    return NextResponse.json(
+      { message: "Enter a valid number of days." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
@@ -79,7 +101,10 @@ export async function POST(request: NextRequest) {
     .select("_id")
     .lean();
   if (!employee) {
-    return NextResponse.json({ message: "Employee not found in this store." }, { status: 404 });
+    return NextResponse.json(
+      { message: "Employee not found in this store." },
+      { status: 404 }
+    );
   }
 
   const extraDay = await ExtraDay.create({

@@ -17,13 +17,20 @@ export function toNumber(value: string): number {
 }
 
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 export function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" }).format(
-    new Date(`${value}T00:00:00`),
-  );
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${value}T00:00:00`));
 }
 
 export function buildEmptyForm(): WithdrawalForm {
@@ -31,5 +38,10 @@ export function buildEmptyForm(): WithdrawalForm {
 }
 
 export function buildFormFromRecord(record: WithdrawalRecord): WithdrawalForm {
-  return { date: record.date, amount: String(record.amount), type: record.type, reason: record.reason };
+  return {
+    date: record.date,
+    amount: String(record.amount),
+    type: record.type,
+    reason: record.reason,
+  };
 }

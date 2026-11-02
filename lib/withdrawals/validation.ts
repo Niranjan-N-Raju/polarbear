@@ -11,11 +11,15 @@ export interface WithdrawalPayload {
 }
 
 export function validateWithdrawalPayload(
-  body: WithdrawalPayload,
+  body: WithdrawalPayload
 ): { value: Omit<WithdrawalRecord, "id"> } | { error: string } {
   const dateError = validateRecordDate(body.date);
   if (dateError) return { error: dateError };
-  if (typeof body.amount !== "number" || !Number.isFinite(body.amount) || body.amount <= 0) {
+  if (
+    typeof body.amount !== "number" ||
+    !Number.isFinite(body.amount) ||
+    body.amount <= 0
+  ) {
     return { error: "A valid amount is required." };
   }
   if (!hasAtMostTwoDecimals(body.amount)) {
@@ -25,6 +29,14 @@ export function validateWithdrawalPayload(
     return { error: "Type must be either withdrawal or repayment." };
   }
   const reason = typeof body.reason === "string" ? body.reason.trim() : "";
-  if (reason.length > 300) return { error: "Reason must be 300 characters or fewer." };
-  return { value: { date: body.date as string, amount: body.amount, type: body.type, reason } };
+  if (reason.length > 300)
+    return { error: "Reason must be 300 characters or fewer." };
+  return {
+    value: {
+      date: body.date as string,
+      amount: body.amount,
+      type: body.type,
+      reason,
+    },
+  };
 }

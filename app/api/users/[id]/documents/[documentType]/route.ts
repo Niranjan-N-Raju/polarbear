@@ -1,11 +1,17 @@
 import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api-auth";
-import { canManageTargetUser, USER_MANAGEMENT_CALLERS } from "@/lib/user-permissions";
+import {
+  canManageTargetUser,
+  USER_MANAGEMENT_CALLERS,
+} from "@/lib/user-permissions";
 import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
 import { decryptBuffer, encryptBuffer } from "@/lib/crypto";
-import { detectAllowedUploadType, parseFormDataWithLimit } from "@/lib/file-upload";
+import {
+  detectAllowedUploadType,
+  parseFormDataWithLimit,
+} from "@/lib/file-upload";
 import User from "@/models/User";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -49,7 +55,7 @@ function getBucket() {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string; documentType: string }> },
+  { params }: { params: Promise<{ id: string; documentType: string }> }
 ) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
@@ -57,25 +63,37 @@ export async function POST(
   const { id, documentType: rawDocumentType } = await params;
   const documentType = getDocumentType(rawDocumentType);
   if (!documentType) {
-    return NextResponse.json({ message: "Invalid document type." }, { status: 400 });
+    return NextResponse.json(
+      { message: "Invalid document type." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
   const authError = await authorize(id);
   if (authError) return authError;
 
-  const formData = await parseFormDataWithLimit(request, MAX_FILE_SIZE + 64 * 1024);
+  const formData = await parseFormDataWithLimit(
+    request,
+    MAX_FILE_SIZE + 64 * 1024
+  );
   if (!formData) {
-    return NextResponse.json({ message: "Document request is invalid or too large." }, { status: 413 });
+    return NextResponse.json(
+      { message: "Document request is invalid or too large." },
+      { status: 413 }
+    );
   }
   const file = formData.get("file");
   if (!(file instanceof File)) {
-    return NextResponse.json({ message: "Choose a document to upload." }, { status: 400 });
+    return NextResponse.json(
+      { message: "Choose a document to upload." },
+      { status: 400 }
+    );
   }
   if (file.size > MAX_FILE_SIZE) {
     return NextResponse.json(
       { message: "Document must be 5 MB or smaller." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -92,7 +110,7 @@ export async function POST(
   if (!contentType || !ALLOWED_TYPES.has(contentType)) {
     return NextResponse.json(
       { message: "Only valid PDF, JPEG, and PNG files are allowed." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   const encrypted = encryptBuffer(fileBytes);
@@ -135,22 +153,32 @@ export async function POST(
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string; documentType: string }> },
+  { params }: { params: Promise<{ id: string; documentType: string }> }
 ) {
   const { id, documentType: rawDocumentType } = await params;
   const documentType = getDocumentType(rawDocumentType);
   if (!documentType) {
-    return NextResponse.json({ message: "Invalid document type." }, { status: 400 });
+    return NextResponse.json(
+      { message: "Invalid document type." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
   const authError = await authorize(id);
   if (authError) return authError;
 
-  const user = await User.findById(id).select(DOCUMENT_FIELDS[documentType]).lean();
-  const metadata = user?.[DOCUMENT_FIELDS[documentType]] as DocumentMetadata | undefined;
+  const user = await User.findById(id)
+    .select(DOCUMENT_FIELDS[documentType])
+    .lean();
+  const metadata = user?.[DOCUMENT_FIELDS[documentType]] as
+    | DocumentMetadata
+    | undefined;
   if (!metadata?.fileId) {
-    return NextResponse.json({ message: "Document not found." }, { status: 404 });
+    return NextResponse.json(
+      { message: "Document not found." },
+      { status: 404 }
+    );
   }
 
   try {
@@ -163,10 +191,15 @@ export async function GET(
       headers: {
         "Cache-Control": "private, no-store",
         "Content-Type": metadata.contentType,
-        "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(metadata.fileName)}`,
+        "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(
+          metadata.fileName
+        )}`,
       },
     });
   } catch {
-    return NextResponse.json({ message: "Document could not be read." }, { status: 404 });
+    return NextResponse.json(
+      { message: "Document could not be read." },
+      { status: 404 }
+    );
   }
 }

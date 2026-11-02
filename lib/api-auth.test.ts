@@ -20,28 +20,47 @@ describe("getAuthorizedStoreAdminId", () => {
 
   it("allows only an assigned store and preserves the requested id", async () => {
     allowedIds.mockResolvedValue([storeId]);
-    await expect(getAuthorizedStoreAdminId(auth, storeId)).resolves.toBe(storeId);
+    await expect(getAuthorizedStoreAdminId(auth, storeId)).resolves.toBe(
+      storeId
+    );
     expect(allowedIds).toHaveBeenCalledExactlyOnceWith(auth);
   });
 
-  it.each(["admin", "sub_admin", "employee", "unknown"])("denies %s without a lookup", async (role) => {
-    await expect(getAuthorizedStoreAdminId({ ...auth, role }, storeId)).resolves.toBeNull();
-    expect(allowedIds).not.toHaveBeenCalled();
-  });
+  it.each(["admin", "sub_admin", "employee", "unknown"])(
+    "denies %s without a lookup",
+    async (role) => {
+      await expect(
+        getAuthorizedStoreAdminId({ ...auth, role }, storeId)
+      ).resolves.toBeNull();
+      expect(allowedIds).not.toHaveBeenCalled();
+    }
+  );
 
-  it.each([null, undefined, "", "invalid-id"])("denies invalid store %s without a lookup", async (requestedId) => {
-    await expect(getAuthorizedStoreAdminId(auth, requestedId)).resolves.toBeNull();
-    expect(allowedIds).not.toHaveBeenCalled();
-  });
+  it.each([null, undefined, "", "invalid-id"])(
+    "denies invalid store %s without a lookup",
+    async (requestedId) => {
+      await expect(
+        getAuthorizedStoreAdminId(auth, requestedId)
+      ).resolves.toBeNull();
+      expect(allowedIds).not.toHaveBeenCalled();
+    }
+  );
 
-  it.each([[], ["507f1f77bcf86cd799439012"], null])("denies an unassigned store for %s", async (assigned) => {
-    allowedIds.mockResolvedValue(assigned);
-    await expect(getAuthorizedStoreAdminId(auth, storeId)).resolves.toBeNull();
-  });
+  it.each([[], ["507f1f77bcf86cd799439012"], null])(
+    "denies an unassigned store for %s",
+    async (assigned) => {
+      allowedIds.mockResolvedValue(assigned);
+      await expect(
+        getAuthorizedStoreAdminId(auth, storeId)
+      ).resolves.toBeNull();
+    }
+  );
 
   it("preserves permission lookup failures", async () => {
     const failure = new Error("lookup failed");
     allowedIds.mockRejectedValue(failure);
-    await expect(getAuthorizedStoreAdminId(auth, storeId)).rejects.toBe(failure);
+    await expect(getAuthorizedStoreAdminId(auth, storeId)).rejects.toBe(
+      failure
+    );
   });
 });

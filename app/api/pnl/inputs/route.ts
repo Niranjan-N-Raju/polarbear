@@ -27,7 +27,10 @@ export async function GET(request: NextRequest) {
   const franchiseId = params.get("franchiseId") ?? "";
   const period = params.get("period") ?? "";
   if (!isValidPeriod(period)) {
-    return NextResponse.json({ message: "A valid period is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid period is required." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
@@ -35,10 +38,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Access denied." }, { status: 403 });
   }
 
-  const input = await PnlInput.findOne({ franchise: franchiseId, period }).lean();
+  const input = await PnlInput.findOne({
+    franchise: franchiseId,
+    period,
+  }).lean();
 
   return NextResponse.json({
-    input: input ? { period: input.period, values: toPlainValues(input.values) } : null,
+    input: input
+      ? { period: input.period, values: toPlainValues(input.values) }
+      : null,
   });
 }
 
@@ -59,7 +67,10 @@ export async function PUT(request: NextRequest) {
   const franchiseId = body.franchiseId ?? "";
   const period = body.period ?? "";
   if (!isValidPeriod(period)) {
-    return NextResponse.json({ message: "A valid period is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid period is required." },
+      { status: 400 }
+    );
   }
 
   const entries = Object.entries(body.values ?? {});
@@ -69,10 +80,16 @@ export async function PUT(request: NextRequest) {
   const values: Record<string, number> = {};
   for (const [key, value] of entries) {
     if (!FIELD_KEY_PATTERN.test(key)) {
-      return NextResponse.json({ message: `Invalid field name: ${key}.` }, { status: 400 });
+      return NextResponse.json(
+        { message: `Invalid field name: ${key}.` },
+        { status: 400 }
+      );
     }
     if (!isFiniteNonNegative(value)) {
-      return NextResponse.json({ message: `Enter a valid value for ${key}.` }, { status: 400 });
+      return NextResponse.json(
+        { message: `Enter a valid value for ${key}.` },
+        { status: 400 }
+      );
     }
     values[key] = value;
   }
@@ -88,7 +105,7 @@ export async function PUT(request: NextRequest) {
   const input = await PnlInput.findOneAndUpdate(
     { franchise: franchiseId, period },
     { $set: { values }, $setOnInsert: { createdBy: auth.id } },
-    { new: true, upsert: true, runValidators: true },
+    { new: true, upsert: true, runValidators: true }
   ).lean();
 
   return NextResponse.json({

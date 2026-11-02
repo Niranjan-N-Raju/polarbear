@@ -8,7 +8,10 @@ import {
   OutlineCloseIcon,
 } from "@/app/components/icons";
 import { useToast } from "@/app/hooks/useToast";
-import type { StoreSelectFranchise, StoreSelectModalProps } from "@/types/store-config";
+import type {
+  StoreSelectFranchise,
+  StoreSelectModalProps,
+} from "@/types/store-config";
 
 function TrailingIcon({
   franchiseId,
@@ -57,7 +60,7 @@ export default function StoreSelectModal({
       // Trap focus within modal
       if (e.key === "Tab" && modalRef.current) {
         const focusable = modalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
         if (focusable.length === 0) return;
         const first = focusable[0];
@@ -161,7 +164,11 @@ export default function StoreSelectModal({
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p
-                    className={`font-semibold text-sm truncate ${isActive ? "text-brand-orange" : "text-gray-800 group-hover:text-brand-orange"}`}
+                    className={`font-semibold text-sm truncate ${
+                      isActive
+                        ? "text-brand-orange"
+                        : "text-gray-800 group-hover:text-brand-orange"
+                    }`}
                   >
                     {f.name}
                   </p>
@@ -211,7 +218,12 @@ export default function StoreSelectModal({
         {/* Header */}
         <div className="flex items-start justify-between px-6 pt-6 pb-4">
           <div>
-            <h2 id="store-select-title" className="text-lg font-bold text-gray-900">Select Store</h2>
+            <h2
+              id="store-select-title"
+              className="text-lg font-bold text-gray-900"
+            >
+              Select Store
+            </h2>
             <p className="text-sm text-gray-500 mt-0.5">
               {canDismiss
                 ? "Switch to a different store"

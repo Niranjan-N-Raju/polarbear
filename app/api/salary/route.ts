@@ -10,9 +10,19 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { validateCsrf } from "@/lib/csrf";
 import { getAuthorizedStoreAdminId, requireAuth } from "@/lib/api-auth";
 import { auditLog } from "@/lib/audit-log";
-import { isValidPeriod, localDateValue, getCycleRange, resolveCycleSettings, roundCurrency } from "@/lib/salary-cycle";
+import {
+  isValidPeriod,
+  localDateValue,
+  getCycleRange,
+  resolveCycleSettings,
+  roundCurrency,
+} from "@/lib/salary-cycle";
 import { datesBetween as enumerateDates } from "@/lib/date-utils";
-import { positionAtDate, salaryAtDate, salaryForDates } from "@/lib/salary-history";
+import {
+  positionAtDate,
+  salaryAtDate,
+  salaryForDates,
+} from "@/lib/salary-history";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
@@ -22,7 +32,10 @@ export async function GET(request: NextRequest) {
   const franchiseId = params.get("franchiseId") ?? "";
   const period = params.get("period") ?? "";
   if (!isValidPeriod(period)) {
-    return NextResponse.json({ message: "A valid salary period is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid salary period is required." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
@@ -31,32 +44,38 @@ export async function GET(request: NextRequest) {
   }
 
   const store = await Franchise.findById(franchiseId)
-    .select("name salaryCycleType salaryCycleStartDay salaryCycleEndDay salaryCycleConfiguredAt")
+    .select(
+      "name salaryCycleType salaryCycleStartDay salaryCycleEndDay salaryCycleConfiguredAt"
+    )
     .lean();
-  if (!store) return NextResponse.json({ message: "Store not found." }, { status: 404 });
+  if (!store)
+    return NextResponse.json({ message: "Store not found." }, { status: 404 });
 
   const { cycleType, startDay, endDay } = resolveCycleSettings(store);
   const range = getCycleRange(period, cycleType, startDay);
   const cycleDates = enumerateDates(range.from, range.to);
   const today = localDateValue();
 
-  const [employees, attendance, incentives, extraDays, advances] = await Promise.all([
-    User.find({
-      role: "employee",
-      isActive: { $ne: false },
-      franchises: franchiseId,
-    })
-      .select("name position employmentType salary salaryBaseline salaryRevisions dateOfJoining")
-      .sort({ name: 1 })
-      .lean(),
-    Attendance.find({
-      franchise: franchiseId,
-      date: { $gte: range.from, $lte: range.to },
-    }).lean(),
-    Incentive.find({ franchise: franchiseId, period }).lean(),
-    ExtraDay.find({ franchise: franchiseId, period }).lean(),
-    Advance.find({ franchise: franchiseId, period }).lean(),
-  ]);
+  const [employees, attendance, incentives, extraDays, advances] =
+    await Promise.all([
+      User.find({
+        role: "employee",
+        isActive: { $ne: false },
+        franchises: franchiseId,
+      })
+        .select(
+          "name position employmentType salary salaryBaseline salaryRevisions dateOfJoining"
+        )
+        .sort({ name: 1 })
+        .lean(),
+      Attendance.find({
+        franchise: franchiseId,
+        date: { $gte: range.from, $lte: range.to },
+      }).lean(),
+      Incentive.find({ franchise: franchiseId, period }).lean(),
+      ExtraDay.find({ franchise: franchiseId, period }).lean(),
+      Advance.find({ franchise: franchiseId, period }).lean(),
+    ]);
 
   const attendanceByEmployee = new Map<string, Map<string, string>>();
   for (const record of attendance) {
@@ -66,27 +85,49 @@ export async function GET(request: NextRequest) {
     attendanceByEmployee.set(employeeId, employeeRecords);
   }
 
-  const incentivesByEmployee = new Map<string, { id: string; type: string; amount: number; paidEarly: boolean }[]>();
+  const incentivesByEmployee = new Map<
+    string,
+    { id: string; type: string; amount: number; paidEarly: boolean }[]
+  >();
   for (const incentive of incentives) {
     const employeeId = String(incentive.employee);
     const list = incentivesByEmployee.get(employeeId) ?? [];
-    list.push({ id: String(incentive._id), type: incentive.type, amount: incentive.amount, paidEarly: incentive.paidEarly === true });
+    list.push({
+      id: String(incentive._id),
+      type: incentive.type,
+      amount: incentive.amount,
+      paidEarly: incentive.paidEarly === true,
+    });
     incentivesByEmployee.set(employeeId, list);
   }
 
-  const extraDaysByEmployee = new Map<string, { id: string; type: string; days: number }[]>();
+  const extraDaysByEmployee = new Map<
+    string,
+    { id: string; type: string; days: number }[]
+  >();
   for (const extraDay of extraDays) {
     const employeeId = String(extraDay.employee);
     const list = extraDaysByEmployee.get(employeeId) ?? [];
-    list.push({ id: String(extraDay._id), type: extraDay.type, days: extraDay.days });
+    list.push({
+      id: String(extraDay._id),
+      type: extraDay.type,
+      days: extraDay.days,
+    });
     extraDaysByEmployee.set(employeeId, list);
   }
 
-  const advancesByEmployee = new Map<string, { id: string; type: string; amount: number }[]>();
+  const advancesByEmployee = new Map<
+    string,
+    { id: string; type: string; amount: number }[]
+  >();
   for (const advance of advances) {
     const employeeId = String(advance.employee);
     const list = advancesByEmployee.get(employeeId) ?? [];
-    list.push({ id: String(advance._id), type: advance.type, amount: advance.amount });
+    list.push({
+      id: String(advance._id),
+      type: advance.type,
+      amount: advance.amount,
+    });
     advancesByEmployee.set(employeeId, list);
   }
 
@@ -103,21 +144,52 @@ export async function GET(request: NextRequest) {
       const status = records.get(date);
       return status === "Present" || status === "Week Off";
     }).length;
-    const absentDays = elapsedDates.filter((date) => records.get(date) === "Absent").length;
-    const weekOffDays = elapsedDates.filter((date) => records.get(date) === "Week Off").length;
-    const missingDays = elapsedDates.filter((date) => !records.has(date)).length;
+    const absentDays = elapsedDates.filter(
+      (date) => records.get(date) === "Absent"
+    ).length;
+    const weekOffDays = elapsedDates.filter(
+      (date) => records.get(date) === "Week Off"
+    ).length;
+    const missingDays = elapsedDates.filter(
+      (date) => !records.has(date)
+    ).length;
     const salary = salaryAtDate(employee, range.to);
     const cycleDays = cycleDates.length;
     const employeeIncentives = incentivesByEmployee.get(employeeId) ?? [];
-    const incentiveTotal = employeeIncentives.reduce((sum, item) => sum + item.amount, 0);
-    const paidEarlyIncentiveTotal = roundCurrency(employeeIncentives.reduce((sum, item) => sum + (item.paidEarly ? item.amount : 0), 0));
+    const incentiveTotal = employeeIncentives.reduce(
+      (sum, item) => sum + item.amount,
+      0
+    );
+    const paidEarlyIncentiveTotal = roundCurrency(
+      employeeIncentives.reduce(
+        (sum, item) => sum + (item.paidEarly ? item.amount : 0),
+        0
+      )
+    );
     const employeeExtraDays = extraDaysByEmployee.get(employeeId) ?? [];
-    const extraDaysTotal = employeeExtraDays.reduce((sum, item) => sum + item.days, 0);
+    const extraDaysTotal = employeeExtraDays.reduce(
+      (sum, item) => sum + item.days,
+      0
+    );
     const employeeAdvances = advancesByEmployee.get(employeeId) ?? [];
-    const advanceTotal = employeeAdvances.reduce((sum, item) => sum + item.amount, 0);
-    const paidDates = elapsedDates.filter((date) => records.get(date) === "Present" || records.get(date) === "Week Off");
-    const basicSalary = roundCurrency(salaryForDates(employee, paidDates, extraDaysTotal, cycleDays, range.to));
-    const projectedBase = salaryForDates(employee, [...paidDates, ...payableDates.filter((date) => date > today)], extraDaysTotal, cycleDays, range.to);
+    const advanceTotal = employeeAdvances.reduce(
+      (sum, item) => sum + item.amount,
+      0
+    );
+    const paidDates = elapsedDates.filter(
+      (date) =>
+        records.get(date) === "Present" || records.get(date) === "Week Off"
+    );
+    const basicSalary = roundCurrency(
+      salaryForDates(employee, paidDates, extraDaysTotal, cycleDays, range.to)
+    );
+    const projectedBase = salaryForDates(
+      employee,
+      [...paidDates, ...payableDates.filter((date) => date > today)],
+      extraDaysTotal,
+      cycleDays,
+      range.to
+    );
 
     // Salary is prorated across the full cycle; projectedSalary additionally
     // treats remaining eligible dates as paid until attendance is recorded.
@@ -141,8 +213,13 @@ export async function GET(request: NextRequest) {
       extraDaysTotal,
       advances: employeeAdvances,
       advanceTotal,
-      earnedSalary: basicSalary + incentiveTotal - advanceTotal - paidEarlyIncentiveTotal,
-      projectedSalary: roundCurrency(projectedBase) + incentiveTotal - advanceTotal - paidEarlyIncentiveTotal,
+      earnedSalary:
+        basicSalary + incentiveTotal - advanceTotal - paidEarlyIncentiveTotal,
+      projectedSalary:
+        roundCurrency(projectedBase) +
+        incentiveTotal -
+        advanceTotal -
+        paidEarlyIncentiveTotal,
     };
   });
 
@@ -178,11 +255,16 @@ export async function PUT(request: NextRequest) {
   if (
     (body.cycleType !== "calendar_month" && body.cycleType !== "custom") ||
     (!isCalendarMonth &&
-      (!Number.isInteger(body.startDay) || body.startDay! < 2 || body.startDay! > 28))
+      (!Number.isInteger(body.startDay) ||
+        body.startDay! < 2 ||
+        body.startDay! > 28))
   ) {
     return NextResponse.json(
-      { message: "Choose a valid cycle type and a custom start day from 2 to 28." },
-      { status: 400 },
+      {
+        message:
+          "Choose a valid cycle type and a custom start day from 2 to 28.",
+      },
+      { status: 400 }
     );
   }
 
@@ -204,7 +286,7 @@ export async function PUT(request: NextRequest) {
         salaryCycleConfiguredAt: new Date(),
       },
     },
-    { new: true, runValidators: true },
+    { new: true, runValidators: true }
   ).lean();
   if (!store) {
     return NextResponse.json({ message: "Store not found." }, { status: 404 });

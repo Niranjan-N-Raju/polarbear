@@ -55,13 +55,25 @@ export function useDashboardData() {
       queueMicrotask(() => {
         if (!cancelled) setDailySales([]);
       });
-      return () => { cancelled = true; };
+      return () => {
+        cancelled = true;
+      };
     }
-    dashboardRequest(`/api/sales?franchiseId=${encodeURIComponent(activeStoreId)}&from=${dateFrom}&to=${dateTo}`)
+    dashboardRequest(
+      `/api/sales?franchiseId=${encodeURIComponent(
+        activeStoreId
+      )}&from=${dateFrom}&to=${dateTo}`
+    )
       .then((response) => response.json())
-      .then((data: { sales?: DailySale[] }) => { if (!cancelled) setDailySales(data.sales ?? []); })
-      .catch(() => { if (!cancelled) setDailySales([]); });
-    return () => { cancelled = true; };
+      .then((data: { sales?: DailySale[] }) => {
+        if (!cancelled) setDailySales(data.sales ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setDailySales([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [activeStoreId, dateFrom, dateTo]);
 
   return {

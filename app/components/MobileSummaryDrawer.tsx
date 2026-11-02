@@ -4,7 +4,10 @@ import { useState } from "react";
 import { faChartSimple } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { SummaryCard, type SummaryCardColor } from "@/app/components/SummaryCard";
+import {
+  SummaryCard,
+  type SummaryCardColor,
+} from "@/app/components/SummaryCard";
 import { OutlineCloseIcon } from "@/app/components/icons";
 import { useDrawerVisibility } from "@/app/hooks/useDrawerClose";
 
@@ -40,7 +43,9 @@ export function MobileSummaryDrawer({
       {shouldRender && (
         <>
           <div
-            className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 sm:hidden ${visible ? "opacity-100" : "opacity-0"}`}
+            className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 sm:hidden ${
+              visible ? "opacity-100" : "opacity-0"
+            }`}
             aria-hidden="true"
             onClick={() => setOpen(false)}
             style={{ height: "100vh" }}
@@ -71,7 +76,14 @@ export function MobileSummaryDrawer({
                   icon={card.icon}
                   subtitle={card.subtitle}
                   highlight={card.highlight}
-                  onClick={card.onClick ? () => { card.onClick?.(); setOpen(false); } : undefined}
+                  onClick={
+                    card.onClick
+                      ? () => {
+                          card.onClick?.();
+                          setOpen(false);
+                        }
+                      : undefined
+                  }
                 />
               ))}
             </div>

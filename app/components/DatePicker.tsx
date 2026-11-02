@@ -49,12 +49,17 @@ export function DatePicker({
   const [open, setOpen] = useState(false);
   // Default the view to the max/min bound (e.g. 18-years-ago for DOB) instead of "today" so it doesn't open on a fully-disabled month.
   const fallback = value || max || min;
-  const initial = fallback ? parseISO(fallback) : { year: new Date().getFullYear(), month: new Date().getMonth() };
+  const initial = fallback
+    ? parseISO(fallback)
+    : { year: new Date().getFullYear(), month: new Date().getMonth() };
   const [viewYear, setViewYear] = useState(initial.year);
   const [viewMonth, setViewMonth] = useState(initial.month);
-  const [position, setPosition] = useState<{ top: number; left: number; width: number; openUp: boolean } | null>(
-    null,
-  );
+  const [position, setPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    openUp: boolean;
+  } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const disabledSet = new Set(disabledDates);
@@ -148,13 +153,20 @@ export function DatePicker({
     ...Array.from({ length: firstDay }, () => null),
     ...Array.from({ length: totalDays }, (_, index) => index + 1),
   ];
-  const monthLabel = new Intl.DateTimeFormat("en-IN", { month: "long" }).format(new Date(viewYear, viewMonth, 1));
+  const monthLabel = new Intl.DateTimeFormat("en-IN", { month: "long" }).format(
+    new Date(viewYear, viewMonth, 1)
+  );
   const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 120 }, (_, index) => currentYear - index);
+  const yearOptions = Array.from(
+    { length: 120 },
+    (_, index) => currentYear - index
+  );
   const displayValue = value
-    ? new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" }).format(
-        new Date(`${value}T00:00:00`),
-      )
+    ? new Intl.DateTimeFormat("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }).format(new Date(`${value}T00:00:00`))
     : "";
 
   return (
@@ -169,8 +181,13 @@ export function DatePicker({
         aria-expanded={open}
         className={`flex items-center justify-between gap-2 ${className ?? ""}`}
       >
-        <span>{displayValue || <span className="text-gray-400">{placeholder}</span>}</span>
-        <FontAwesomeIcon icon={faCalendarDay} className="h-3.5 w-3.5 shrink-0 text-brand-orange" />
+        <span>
+          {displayValue || <span className="text-gray-400">{placeholder}</span>}
+        </span>
+        <FontAwesomeIcon
+          icon={faCalendarDay}
+          className="h-3.5 w-3.5 shrink-0 text-brand-orange"
+        />
       </button>
       {open &&
         position &&
@@ -180,7 +197,9 @@ export function DatePicker({
             style={{
               position: "fixed",
               top: position.openUp ? undefined : position.top + 4,
-              bottom: position.openUp ? window.innerHeight - position.top + 4 : undefined,
+              bottom: position.openUp
+                ? window.innerHeight - position.top + 4
+                : undefined,
               left: position.left,
               minWidth: Math.max(position.width, 288),
             }}
@@ -196,7 +215,9 @@ export function DatePicker({
                 ‹
               </button>
               <div className="flex items-center gap-1">
-                <span className="text-sm font-semibold text-gray-900">{monthLabel}</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {monthLabel}
+                </span>
                 <select
                   value={viewYear}
                   onChange={(event) => setViewYear(Number(event.target.value))}
@@ -236,13 +257,17 @@ export function DatePicker({
                     type="button"
                     disabled={disabled}
                     onClick={() => selectDate(dateStr)}
-                    title={disabled ? "A sale already exists for this date" : undefined}
+                    title={
+                      disabled
+                        ? "A sale already exists for this date"
+                        : undefined
+                    }
                     className={`h-8 text-xs font-medium transition ${
                       selected
                         ? "bg-brand-orange text-white"
                         : disabled
-                          ? "cursor-not-allowed text-gray-300 line-through"
-                          : "text-gray-700 hover:bg-brand-peach"
+                        ? "cursor-not-allowed text-gray-300 line-through"
+                        : "text-gray-700 hover:bg-brand-peach"
                     }`}
                   >
                     {day}
@@ -251,7 +276,7 @@ export function DatePicker({
               })}
             </div>
           </div>,
-          document.body,
+          document.body
         )}
     </div>
   );

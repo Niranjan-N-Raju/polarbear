@@ -27,7 +27,7 @@ const SaleExpenseSchema = new Schema<ISaleExpense>(
     name: { type: String, required: true, trim: true, maxlength: 100 },
     amount: { type: Number, required: true, min: 0 },
   },
-  { _id: false },
+  { _id: false }
 );
 
 const SaleSchema: Schema<ISale> = new Schema(
@@ -53,7 +53,7 @@ const SaleSchema: Schema<ISale> = new Schema(
       required: true,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 SaleSchema.index({ franchise: 1, date: 1 }, { unique: true });

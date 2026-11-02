@@ -14,12 +14,12 @@ export function getJwtSecret(): Uint8Array {
   const raw = process.env.JWT_SECRET;
   if (!raw) {
     throw new Error(
-      "JWT_SECRET environment variable is not set. Add it to .env.local",
+      "JWT_SECRET environment variable is not set. Add it to .env.local"
     );
   }
   if (raw.length < MIN_JWT_SECRET_LENGTH) {
     throw new Error(
-      `JWT_SECRET must be at least ${MIN_JWT_SECRET_LENGTH} characters long.`,
+      `JWT_SECRET must be at least ${MIN_JWT_SECRET_LENGTH} characters long.`
     );
   }
   return new TextEncoder().encode(raw);

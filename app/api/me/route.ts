@@ -24,10 +24,12 @@ import { auditLog } from "@/lib/audit-log";
  */
 export async function GET() {
   const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!auth)
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   await connectToDatabase();
   const user = await User.findById(auth.id).select("name email role").lean();
-  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!user)
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   return NextResponse.json({
     id: String(user._id),
     name: user.name,
@@ -44,18 +46,26 @@ export async function PATCH(request: NextRequest) {
   if (csrfError) return csrfError;
 
   const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!auth)
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
   // Rate limiting for password changes
   const ip = getClientIp(request);
   const rateCheck = checkRateLimit(
     `password-change:${auth.id}`,
-    RATE_LIMITS.passwordChange,
+    RATE_LIMITS.passwordChange
   );
   if (!rateCheck.allowed) {
     return NextResponse.json(
       { message: "Too many requests. Please try again later." },
-      { status: 429, headers: { "Retry-After": String(Math.ceil((rateCheck.retryAfterMs ?? 0) / 1000)) } },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(
+            Math.ceil((rateCheck.retryAfterMs ?? 0) / 1000)
+          ),
+        },
+      }
     );
   }
 
@@ -69,7 +79,7 @@ export async function PATCH(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json(
       { message: parsed.error.issues[0]?.message ?? "Invalid input." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -87,7 +97,7 @@ export async function PATCH(request: NextRequest) {
     if (!trimmed) {
       return NextResponse.json(
         { message: "Name cannot be empty" },
-        { status: 400 },
+        { status: 400 }
       );
     }
     user.name = trimmed;
@@ -99,26 +109,26 @@ export async function PATCH(request: NextRequest) {
     if (!currentPassword) {
       return NextResponse.json(
         { message: "Current password is required to set a new password" },
-        { status: 400 },
+        { status: 400 }
       );
     }
     const valid = await bcrypt.compare(currentPassword, user.password);
     if (!valid) {
       return NextResponse.json(
         { message: "Current password is incorrect" },
-        { status: 400 },
+        { status: 400 }
       );
     }
     if (newPassword.length < 12) {
       return NextResponse.json(
         { message: "New password must be at least 12 characters" },
-        { status: 400 },
+        { status: 400 }
       );
     }
     if (await bcrypt.compare(newPassword, user.password)) {
       return NextResponse.json(
         { message: "New password must be different from the current password" },
-        { status: 400 },
+        { status: 400 }
       );
     }
     user.password = await bcrypt.hash(newPassword, 12);
@@ -126,8 +136,11 @@ export async function PATCH(request: NextRequest) {
     user.mustChangePassword = false;
   } else if (auth.mustChangePassword) {
     return NextResponse.json(
-      { message: "You must set a new password before continuing.", code: "PASSWORD_CHANGE_REQUIRED" },
-      { status: 403 },
+      {
+        message: "You must set a new password before continuing.",
+        code: "PASSWORD_CHANGE_REQUIRED",
+      },
+      { status: 403 }
     );
   }
 
@@ -142,7 +155,8 @@ export async function PATCH(request: NextRequest) {
   // Re-issue JWT so profile changes (e.g. name) are reflected immediately.
   // The original login time is preserved so the 24h absolute session cap still applies.
   const current = await getVerifiedSessionPayload();
-  const sessionStart = (current && getSessionStart(current.payload)) ?? nowSeconds();
+  const sessionStart =
+    (current && getSessionStart(current.payload)) ?? nowSeconds();
   const stillRestricted = user.mustChangePassword === true;
   const newToken = await signSessionToken(
     {
@@ -154,10 +168,13 @@ export async function PATCH(request: NextRequest) {
       sessionStart,
       mustChangePassword: stillRestricted,
     },
-    getJwtSecret(),
+    getJwtSecret()
   );
 
-  const response = NextResponse.json({ message: "Profile updated", mustChangePassword: stillRestricted });
+  const response = NextResponse.json({
+    message: "Profile updated",
+    mustChangePassword: stillRestricted,
+  });
   if (stillRestricted) {
     response.cookies.set(PASSWORD_CHANGE_COOKIE, newToken, SESSION_COOKIE_OPTS);
   } else {

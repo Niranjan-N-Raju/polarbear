@@ -32,7 +32,7 @@ const AdvanceSchema: Schema<IAdvance> = new Schema(
       required: true,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 AdvanceSchema.index({ franchise: 1, employee: 1, period: 1 });

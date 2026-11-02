@@ -64,7 +64,7 @@ const FranchiseSchema: Schema<IFranchise> = new Schema(
           fileId: { type: mongoose.Schema.Types.ObjectId, required: true },
           contentType: { type: String, required: true },
         },
-        { _id: false },
+        { _id: false }
       ),
       required: false,
     },
@@ -74,10 +74,18 @@ const FranchiseSchema: Schema<IFranchise> = new Schema(
           {
             id: { type: String, required: true, trim: true, maxlength: 80 },
             name: { type: String, required: true, trim: true, maxlength: 40 },
-            startTime: { type: String, required: true, match: /^(?:[01]\d|2[0-3]):[0-5]\d$/ },
-            endTime: { type: String, required: true, match: /^(?:[01]\d|2[0-3]):[0-5]\d$/ },
+            startTime: {
+              type: String,
+              required: true,
+              match: /^(?:[01]\d|2[0-3]):[0-5]\d$/,
+            },
+            endTime: {
+              type: String,
+              required: true,
+              match: /^(?:[01]\d|2[0-3]):[0-5]\d$/,
+            },
           },
-          { _id: false },
+          { _id: false }
         ),
       ],
       default: [],
@@ -94,7 +102,7 @@ const FranchiseSchema: Schema<IFranchise> = new Schema(
     archivedAt: { type: Date },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 // Database indexes for query performance
@@ -108,7 +116,7 @@ if (mongoose.models.Franchise) {
 
 const Franchise: Model<IFranchise> = mongoose.model<IFranchise>(
   "Franchise",
-  FranchiseSchema,
+  FranchiseSchema
 );
 
 export default Franchise;

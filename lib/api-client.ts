@@ -24,7 +24,10 @@ async function handleSessionFailure(response: Response): Promise<void> {
     redirectTo(`${loginUrl.pathname}${loginUrl.search}`);
     return;
   }
-  if (response.status === 403 && !globalThis.location.pathname.startsWith("/profile")) {
+  if (
+    response.status === 403 &&
+    !globalThis.location.pathname.startsWith("/profile")
+  ) {
     try {
       const data = (await response.clone().json()) as { code?: string };
       if (data?.code === "PASSWORD_CHANGE_REQUIRED") {
@@ -36,7 +39,10 @@ async function handleSessionFailure(response: Response): Promise<void> {
   }
 }
 
-export async function appFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+export async function appFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<Response> {
   const response = await fetch(input, init);
   if (response.status === 401 || response.status === 403) {
     await handleSessionFailure(response);

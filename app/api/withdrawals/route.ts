@@ -15,13 +15,20 @@ export async function GET(request: NextRequest) {
   const auth = authResult;
 
   const params = new URL(request.url).searchParams;
-  const franchiseId = await getAuthorizedStoreAdminId(auth, params.get("franchiseId"));
+  const franchiseId = await getAuthorizedStoreAdminId(
+    auth,
+    params.get("franchiseId")
+  );
   if (!franchiseId) {
-    return NextResponse.json({ message: "A valid store is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid store is required." },
+      { status: 400 }
+    );
   }
   const from = params.get("from");
   const to = params.get("to");
-  const hasRange = !!from && !!to && DATE_PATTERN.test(from) && DATE_PATTERN.test(to);
+  const hasRange =
+    !!from && !!to && DATE_PATTERN.test(from) && DATE_PATTERN.test(to);
 
   await connectToDatabase();
   const withdrawals = await Withdrawal.find({
@@ -39,8 +46,10 @@ export async function GET(request: NextRequest) {
     },
     { $group: { _id: "$type", total: { $sum: "$amount" } } },
   ]);
-  const withdrawalTotal = totals.find((item) => item._id === "withdrawal")?.total ?? 0;
-  const repaymentTotal = totals.find((item) => item._id === "repayment")?.total ?? 0;
+  const withdrawalTotal =
+    totals.find((item) => item._id === "withdrawal")?.total ?? 0;
+  const repaymentTotal =
+    totals.find((item) => item._id === "repayment")?.total ?? 0;
 
   return NextResponse.json({
     totalWithdrawals: withdrawalTotal,
@@ -66,12 +75,19 @@ export async function POST(request: NextRequest) {
   const jsonBody = await readJsonObject<WithdrawalPayload>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
-  const franchiseId = await getAuthorizedStoreAdminId(auth, body.franchiseId ?? null);
+  const franchiseId = await getAuthorizedStoreAdminId(
+    auth,
+    body.franchiseId ?? null
+  );
   if (!franchiseId) {
-    return NextResponse.json({ message: "A valid store is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid store is required." },
+      { status: 400 }
+    );
   }
   const validation = validateWithdrawalPayload(body);
-  if ("error" in validation) return NextResponse.json({ message: validation.error }, { status: 400 });
+  if ("error" in validation)
+    return NextResponse.json({ message: validation.error }, { status: 400 });
 
   await connectToDatabase();
   const created = await Withdrawal.create({

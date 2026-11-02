@@ -10,7 +10,14 @@ export function getUserCountLabel(loading: boolean, count: number): string {
   return `${count} ${count === 1 ? "user" : "users"}`;
 }
 
-export function getDefaultUserRole(currentUserRole: CurrentUserRole, userRole?: CurrentUserRole): CurrentUserRole {
+export function getDefaultUserRole(
+  currentUserRole: CurrentUserRole,
+  userRole?: CurrentUserRole
+): CurrentUserRole {
   if (userRole) return userRole;
-  return currentUserRole === "admin" ? "sub_admin" : currentUserRole === "sub_admin" ? "franchise_admin" : "employee";
+  return currentUserRole === "admin"
+    ? "sub_admin"
+    : currentUserRole === "sub_admin"
+    ? "franchise_admin"
+    : "employee";
 }

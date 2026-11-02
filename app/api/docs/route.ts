@@ -6,7 +6,7 @@ import spec from "@/lib/openapi-spec";
 export async function GET() {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
-  if (! ["admin", "sub_admin", "franchise_admin"].includes(auth.role)) {
+  if (!["admin", "sub_admin", "franchise_admin"].includes(auth.role)) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 

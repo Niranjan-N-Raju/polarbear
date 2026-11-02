@@ -41,7 +41,10 @@ export async function GET(request: NextRequest) {
   const includeArchived = searchParams.get("includeArchived") === "true";
   const excludeEmployees = searchParams.get("excludeEmployees") === "true";
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
-  const limit = Math.min(500, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10)));
+  const limit = Math.min(
+    500,
+    Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10))
+  );
   const skip = (page - 1) * limit;
   const allowedIds = await getAllowedFranchiseIdsForCaller(auth);
 
@@ -90,8 +93,8 @@ export async function GET(request: NextRequest) {
   const allFranchiseIds = [
     ...new Set(
       users.flatMap((u) =>
-        ((u as { franchises?: unknown[] }).franchises ?? []).map(String),
-      ),
+        ((u as { franchises?: unknown[] }).franchises ?? []).map(String)
+      )
     ),
   ];
   const franchises =
@@ -101,7 +104,7 @@ export async function GET(request: NextRequest) {
           .lean()
       : [];
   const franchiseMap = Object.fromEntries(
-    franchises.map((f) => [String(f._id), f.name]),
+    franchises.map((f) => [String(f._id), f.name])
   );
 
   const result = users.map((u) => ({
@@ -110,7 +113,7 @@ export async function GET(request: NextRequest) {
     employeeCode: u.employeeCode,
     email: u.email,
     phone: u.phone,
-      position: positionAtDate(u, businessDateValue()),
+    position: positionAtDate(u, businessDateValue()),
     employmentType: u.employmentType,
     salary: u.salary == null ? null : salaryAtDate(u, businessDateValue()),
     latestSalary: u.salary,
@@ -123,7 +126,7 @@ export async function GET(request: NextRequest) {
       (id) => ({
         _id: String(id),
         name: franchiseMap[String(id)] ?? "Unknown",
-      }),
+      })
     ),
     createdAt: u.createdAt,
   }));
@@ -165,7 +168,7 @@ type CreateUserBody = {
 
 function normalizeCreateUserInput(body: CreateUserBody, callerRole: string) {
   const role =
-    callerRole === "sub_admin" ? "franchise_admin" : (body.role ?? "employee");
+    callerRole === "sub_admin" ? "franchise_admin" : body.role ?? "employee";
   const franchiseIds = Array.isArray(body.franchiseIds)
     ? body.franchiseIds
     : [];
@@ -199,7 +202,7 @@ function validateCreateUserFields(
   name: string | undefined,
   role: string,
   email: string | undefined,
-  password: string | undefined,
+  password: string | undefined
 ): NextResponse | null {
   if (!name?.trim()) {
     return NextResponse.json({ message: "Name is required." }, { status: 400 });
@@ -212,37 +215,37 @@ function validateCreateUserFields(
   if (!email?.trim()) {
     return NextResponse.json(
       { message: "Email is required." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!password || password.length < 12) {
     return NextResponse.json(
       { message: "Password must be at least 12 characters." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!/[A-Z]/.test(password)) {
     return NextResponse.json(
       { message: "Password must contain at least one uppercase letter." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!/[a-z]/.test(password)) {
     return NextResponse.json(
       { message: "Password must contain at least one lowercase letter." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!/[0-9]/.test(password)) {
     return NextResponse.json(
       { message: "Password must contain at least one digit." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (!/[^A-Za-z0-9]/.test(password)) {
     return NextResponse.json(
       { message: "Password must contain at least one special character." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -251,7 +254,7 @@ function validateCreateUserFields(
 
 function validateRoleAssignment(
   callerRole: string,
-  role: string,
+  role: string
 ): NextResponse | null {
   const allowedRoles = getAllowedAssignableRoles(callerRole);
   if (allowedRoles.includes(role)) {
@@ -260,12 +263,12 @@ function validateRoleAssignment(
 
   return NextResponse.json(
     { message: "You are not allowed to assign this role." },
-    { status: 403 },
+    { status: 403 }
   );
 }
 
 async function validateSubAdminStoreEligibility(
-  auth: AuthInfo,
+  auth: AuthInfo
 ): Promise<NextResponse | null> {
   if (auth.role !== "sub_admin") {
     return null;
@@ -286,13 +289,13 @@ async function validateSubAdminStoreEligibility(
     {
       message: "You need to be assigned to at least one store to create users.",
     },
-    { status: 403 },
+    { status: 403 }
   );
 }
 
 function validateFranchiseAdminAssignment(
   role: string,
-  franchiseIds: string[],
+  franchiseIds: string[]
 ): NextResponse | null {
   if (role !== "franchise_admin" || franchiseIds.length > 0) {
     return null;
@@ -300,13 +303,13 @@ function validateFranchiseAdminAssignment(
 
   return NextResponse.json(
     { message: "Store admin must be assigned to at least one store." },
-    { status: 400 },
+    { status: 400 }
   );
 }
 
 async function validateFranchiseScope(
   auth: AuthInfo,
-  franchiseIds: string[],
+  franchiseIds: string[]
 ): Promise<NextResponse | null> {
   if (isGlobalRole(auth.role) || franchiseIds.length === 0) {
     return null;
@@ -314,7 +317,7 @@ async function validateFranchiseScope(
 
   const allowedIds = await getAllowedFranchiseIdsForCaller(auth);
   const unauthorised = franchiseIds.filter(
-    (id: string) => !(allowedIds ?? []).includes(id),
+    (id: string) => !(allowedIds ?? []).includes(id)
   );
   if (unauthorised.length === 0) {
     return null;
@@ -322,25 +325,27 @@ async function validateFranchiseScope(
 
   return NextResponse.json(
     { message: "You can only assign users to your own franchises." },
-    { status: 403 },
+    { status: 403 }
   );
 }
 
 async function validateEmployeePosition(
   franchiseId: string,
-  position: string,
+  position: string
 ): Promise<NextResponse | null> {
-  const franchise = await Franchise.findById(franchiseId).select("positions").lean();
+  const franchise = await Franchise.findById(franchiseId)
+    .select("positions")
+    .lean();
   const positions = franchise?.positions ?? DEFAULT_POSITION_OPTIONS;
   if (positions.includes(position)) return null;
   return NextResponse.json(
     { message: "Select a position configured for this store." },
-    { status: 400 },
+    { status: 400 }
   );
 }
 
 async function validateUniqueEmail(
-  resolvedEmail: string | undefined,
+  resolvedEmail: string | undefined
 ): Promise<NextResponse | null> {
   if (!resolvedEmail) {
     return null;
@@ -353,12 +358,12 @@ async function validateUniqueEmail(
 
   return NextResponse.json(
     { message: "A user with this email already exists." },
-    { status: 409 },
+    { status: 409 }
   );
 }
 
 async function buildPasswordHash(
-  password: string | undefined,
+  password: string | undefined
 ): Promise<string> {
   if (password) {
     return bcrypt.hash(password, 12);
@@ -425,7 +430,8 @@ function buildCreateUserDocument(input: {
     userDoc.emergencyContactPhone = input.emergencyContactPhone.trim();
   }
   if (input.emergencyContactRelationship) {
-    userDoc.emergencyContactRelationship = input.emergencyContactRelationship.trim();
+    userDoc.emergencyContactRelationship =
+      input.emergencyContactRelationship.trim();
   }
   if (input.actualDob) userDoc.actualDob = new Date(input.actualDob);
   if (input.dobInRecords) userDoc.dobInRecords = new Date(input.dobInRecords);
@@ -462,11 +468,21 @@ export async function POST(request: NextRequest) {
 
   // Rate limiting
   const ip = getClientIp(request);
-  const rateCheck = checkRateLimit(`user-create:${auth.id}`, RATE_LIMITS.userCreate);
+  const rateCheck = checkRateLimit(
+    `user-create:${auth.id}`,
+    RATE_LIMITS.userCreate
+  );
   if (!rateCheck.allowed) {
     return NextResponse.json(
       { message: "Too many requests. Please try again later." },
-      { status: 429, headers: { "Retry-After": String(Math.ceil((rateCheck.retryAfterMs ?? 0) / 1000)) } },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(
+            Math.ceil((rateCheck.retryAfterMs ?? 0) / 1000)
+          ),
+        },
+      }
     );
   }
 
@@ -480,7 +496,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json(
       { message: parsed.error.issues[0]?.message ?? "Invalid input." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -515,25 +531,25 @@ export async function POST(request: NextRequest) {
   if (role === "employee" && phone && !/^\d{10}$/.test(phone)) {
     return NextResponse.json(
       { message: "Phone number must be exactly 10 digits." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (role === "employee" && !position) {
     return NextResponse.json(
       { message: "Position is required for employees." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (role === "employee" && !employmentType) {
     return NextResponse.json(
       { message: "Employment type is required for employees." },
-      { status: 400 },
+      { status: 400 }
     );
   }
   if (role === "employee" && salary === undefined) {
     return NextResponse.json(
       { message: "Salary is required for employees." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -544,14 +560,14 @@ export async function POST(request: NextRequest) {
   ) {
     return NextResponse.json(
       { message: "Employees must be at least 18 years old." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
   if (role === "employee" && franchiseIds.length !== 1) {
     return NextResponse.json(
       { message: "An employee must be assigned to exactly one store." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -570,7 +586,10 @@ export async function POST(request: NextRequest) {
   if (franchiseScopeError) return franchiseScopeError;
 
   if (role === "employee" && position && franchiseIds[0]) {
-    const positionError = await validateEmployeePosition(franchiseIds[0], position);
+    const positionError = await validateEmployeePosition(
+      franchiseIds[0],
+      position
+    );
     if (positionError) return positionError;
   }
 
@@ -608,7 +627,9 @@ export async function POST(request: NextRequest) {
         bankBranch,
         dateOfJoining,
       }),
-      ...(role === "employee" ? { employeeCode: await nextEmployeeCode() } : {}),
+      ...(role === "employee"
+        ? { employeeCode: await nextEmployeeCode() }
+        : {}),
     });
 
     auditLog("user.created", {
@@ -630,7 +651,7 @@ export async function POST(request: NextRequest) {
           role: user.role,
         },
       },
-      { status: 201 },
+      { status: 201 }
     );
   } catch (err: unknown) {
     const mongoErr = err as {
@@ -641,7 +662,7 @@ export async function POST(request: NextRequest) {
     if (mongoErr.code === 11000 && mongoErr.keyPattern?.email) {
       return NextResponse.json(
         { message: "A user with this email already exists." },
-        { status: 409 },
+        { status: 409 }
       );
     }
     console.error("[POST /api/users]", err);
@@ -652,7 +673,7 @@ export async function POST(request: NextRequest) {
             ? mongoErr.message ?? "Failed to create user."
             : "Failed to create user. Please try again.",
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

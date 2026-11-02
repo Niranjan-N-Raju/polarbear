@@ -28,13 +28,19 @@ const AttendanceRemovalSchema: Schema<IAttendanceRemoval> = new Schema(
     date: { type: String, required: true, match: /^\d{4}-\d{2}-\d{2}$/ },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
-  { timestamps: true, collection: "attendance_removals" },
+  { timestamps: true, collection: "attendance_removals" }
 );
 
-AttendanceRemovalSchema.index({ franchise: 1, employee: 1, date: 1 }, { unique: true });
+AttendanceRemovalSchema.index(
+  { franchise: 1, employee: 1, date: 1 },
+  { unique: true }
+);
 
 const AttendanceRemoval: Model<IAttendanceRemoval> =
   mongoose.models.AttendanceRemoval ??
-  mongoose.model<IAttendanceRemoval>("AttendanceRemoval", AttendanceRemovalSchema);
+  mongoose.model<IAttendanceRemoval>(
+    "AttendanceRemoval",
+    AttendanceRemovalSchema
+  );
 
 export default AttendanceRemoval;

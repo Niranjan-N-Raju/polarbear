@@ -30,7 +30,7 @@ const WithdrawalSchema: Schema<IWithdrawal> = new Schema(
       required: true,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 WithdrawalSchema.index({ franchise: 1, date: -1 });
@@ -41,6 +41,9 @@ if (mongoose.models.Withdrawal) {
   mongoose.deleteModel("Withdrawal");
 }
 
-const Withdrawal: Model<IWithdrawal> = mongoose.model<IWithdrawal>("Withdrawal", WithdrawalSchema);
+const Withdrawal: Model<IWithdrawal> = mongoose.model<IWithdrawal>(
+  "Withdrawal",
+  WithdrawalSchema
+);
 
 export default Withdrawal;

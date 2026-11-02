@@ -50,7 +50,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const isProtected = PROTECTED_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(route + "/"),
+    (route) => pathname === route || pathname.startsWith(route + "/")
   );
 
   if (!isProtected) {
@@ -66,7 +66,10 @@ export async function proxy(request: NextRequest) {
   try {
     secret = getJwtSecret();
   } catch (error) {
-    console.error("[PROXY] Invalid JWT_SECRET — blocking all protected routes.", error);
+    console.error(
+      "[PROXY] Invalid JWT_SECRET — blocking all protected routes.",
+      error
+    );
     return redirectToLogin(request);
   }
 
@@ -76,9 +79,13 @@ export async function proxy(request: NextRequest) {
     const role = payload.role as string;
 
     // Accounts with an admin-issued password may only reach the profile page until they change it.
-    const mustChangePassword = !fullToken || payload.mustChangePassword === true;
+    const mustChangePassword =
+      !fullToken || payload.mustChangePassword === true;
     if (mustChangePassword) {
-      if (pathname === PROFILE_PATH || pathname.startsWith(PROFILE_PATH + "/")) {
+      if (
+        pathname === PROFILE_PATH ||
+        pathname.startsWith(PROFILE_PATH + "/")
+      ) {
         return NextResponse.next();
       }
       const profileUrl = new URL(PROFILE_PATH, request.url);
@@ -87,10 +94,10 @@ export async function proxy(request: NextRequest) {
     }
 
     const isGlobalAdminRoute = GLOBAL_ADMIN_ROUTES.some(
-      (r) => pathname === r || pathname.startsWith(r + "/"),
+      (r) => pathname === r || pathname.startsWith(r + "/")
     );
     const isFranchiseAdminRoute = FRANCHISE_ADMIN_ROUTES.some(
-      (r) => pathname === r || pathname.startsWith(r + "/"),
+      (r) => pathname === r || pathname.startsWith(r + "/")
     );
 
     if (isGlobalAdminRoute && role !== "admin" && role !== "sub_admin") {

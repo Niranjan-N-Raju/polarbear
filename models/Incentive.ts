@@ -34,12 +34,13 @@ const IncentiveSchema: Schema<IIncentive> = new Schema(
       required: true,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 IncentiveSchema.index({ franchise: 1, employee: 1, period: 1 });
 
 const Incentive: Model<IIncentive> =
-  mongoose.models.Incentive ?? mongoose.model<IIncentive>("Incentive", IncentiveSchema);
+  mongoose.models.Incentive ??
+  mongoose.model<IIncentive>("Incentive", IncentiveSchema);
 
 export default Incentive;

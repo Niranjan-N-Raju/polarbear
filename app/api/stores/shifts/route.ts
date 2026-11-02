@@ -14,12 +14,20 @@ export async function GET(request: NextRequest) {
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) return authResult;
   const params = new URL(request.url).searchParams;
-  const franchiseId = await getAuthorizedStoreId(authResult, params.get("franchiseId"));
-  if (!franchiseId) return NextResponse.json({ message: "A valid store is required." }, { status: 400 });
+  const franchiseId = await getAuthorizedStoreId(
+    authResult,
+    params.get("franchiseId")
+  );
+  if (!franchiseId)
+    return NextResponse.json(
+      { message: "A valid store is required." },
+      { status: 400 }
+    );
 
   await connectToDatabase();
   const store = await Franchise.findById(franchiseId).select("shifts").lean();
-  if (!store) return NextResponse.json({ message: "Store not found." }, { status: 404 });
+  if (!store)
+    return NextResponse.json({ message: "Store not found." }, { status: 404 });
   return NextResponse.json({ shifts: store.shifts ?? [] });
 }
 
@@ -30,18 +38,29 @@ export async function PUT(request: NextRequest) {
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) return authResult;
   if (!["admin", "sub_admin", "franchise_admin"].includes(authResult.role)) {
-    return NextResponse.json({ message: "You are not allowed to configure shifts." }, { status: 403 });
+    return NextResponse.json(
+      { message: "You are not allowed to configure shifts." },
+      { status: 403 }
+    );
   }
 
   const jsonBody = await readJsonObject<{
     franchiseId?: string;
-    shifts?: Array<{ id?: string; name?: string; startTime?: string; endTime?: string }>;
+    shifts?: Array<{
+      id?: string;
+      name?: string;
+      startTime?: string;
+      endTime?: string;
+    }>;
   }>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
   const franchiseId = await getAuthorizedStoreId(authResult, body.franchiseId);
   if (!franchiseId || !Array.isArray(body.shifts) || body.shifts.length > 20) {
-    return NextResponse.json({ message: "A valid store and up to 20 shifts are required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid store and up to 20 shifts are required." },
+      { status: 400 }
+    );
   }
 
   const shifts = body.shifts.map((shift) => ({
@@ -50,42 +69,72 @@ export async function PUT(request: NextRequest) {
     startTime: shift.startTime ?? "",
     endTime: shift.endTime ?? "",
   }));
-  if (shifts.some((shift) =>
-    !SHIFT_ID_PATTERN.test(shift.id) ||
-    !shift.name ||
-    shift.name.length > 40 ||
-    !TIME_PATTERN.test(shift.startTime) ||
-    !TIME_PATTERN.test(shift.endTime)
-  )) {
-    return NextResponse.json({ message: "Each shift needs a name and valid start/end times." }, { status: 400 });
+  if (
+    shifts.some(
+      (shift) =>
+        !SHIFT_ID_PATTERN.test(shift.id) ||
+        !shift.name ||
+        shift.name.length > 40 ||
+        !TIME_PATTERN.test(shift.startTime) ||
+        !TIME_PATTERN.test(shift.endTime)
+    )
+  ) {
+    return NextResponse.json(
+      { message: "Each shift needs a name and valid start/end times." },
+      { status: 400 }
+    );
   }
   if (new Set(shifts.map((shift) => shift.id)).size !== shifts.length) {
-    return NextResponse.json({ message: "Shift IDs must be unique." }, { status: 400 });
+    return NextResponse.json(
+      { message: "Shift IDs must be unique." },
+      { status: 400 }
+    );
   }
-  if (new Set(shifts.map((shift) => shift.name.toLowerCase())).size !== shifts.length) {
-    return NextResponse.json({ message: "Shift names must be unique for this store." }, { status: 400 });
+  if (
+    new Set(shifts.map((shift) => shift.name.toLowerCase())).size !==
+    shifts.length
+  ) {
+    return NextResponse.json(
+      { message: "Shift names must be unique for this store." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
   if (!mongoose.isValidObjectId(authResult.id)) {
-    return NextResponse.json({ message: "A valid authenticated user is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid authenticated user is required." },
+      { status: 400 }
+    );
   }
   const store = await Franchise.findById(franchiseId).select("shifts");
-  if (!store) return NextResponse.json({ message: "Store not found." }, { status: 404 });
+  if (!store)
+    return NextResponse.json({ message: "Store not found." }, { status: 404 });
 
   const nextIds = new Set(shifts.map((shift) => shift.id));
-  const removedIds = (store.shifts ?? []).map((shift) => shift.id).filter((id) => !nextIds.has(id));
+  const removedIds = (store.shifts ?? [])
+    .map((shift) => shift.id)
+    .filter((id) => !nextIds.has(id));
   if (removedIds.length > 0) {
     const usedRoster = await WeeklyRoster.exists({
       franchise: franchiseId,
       "entries.days.shift": { $in: removedIds },
     });
     if (usedRoster) {
-      return NextResponse.json({ message: "A shift is used in a saved weekly roster. Change those rosters before removing it." }, { status: 409 });
+      return NextResponse.json(
+        {
+          message:
+            "A shift is used in a saved weekly roster. Change those rosters before removing it.",
+        },
+        { status: 409 }
+      );
     }
   }
 
   store.shifts = shifts;
   await store.save();
-  return NextResponse.json({ message: "Store shifts saved.", shifts: store.shifts });
+  return NextResponse.json({
+    message: "Store shifts saved.",
+    shifts: store.shifts,
+  });
 }

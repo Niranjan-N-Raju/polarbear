@@ -6,7 +6,8 @@ config({ path: resolve(process.cwd(), ".env.local") });
 
 const mongoUri = process.env.MONGODB_URI ?? "";
 const targetDatabaseName = process.env.MONGODB_DB ?? "";
-const sourceDatabaseName = process.env.SOURCE_MONGODB_DB ?? "inventory_management";
+const sourceDatabaseName =
+  process.env.SOURCE_MONGODB_DB ?? "inventory_management";
 const applyChanges = process.argv.includes("--apply");
 
 if (!mongoUri || !targetDatabaseName) {
@@ -42,7 +43,9 @@ async function main() {
       const name = product.name.trim();
       const normalizedName = normalizeName(name);
       if (!name || name.length > 100) {
-        throw new Error(`Invalid source product name: ${JSON.stringify(product.name)}`);
+        throw new Error(
+          `Invalid source product name: ${JSON.stringify(product.name)}`
+        );
       }
       if (!productsByName.has(normalizedName)) {
         productsByName.set(normalizedName, {
@@ -54,12 +57,16 @@ async function main() {
     }
 
     if (productsByName.size === 0) {
-      console.log(`No global products found in database ${sourceDatabaseName}.`);
+      console.log(
+        `No global products found in database ${sourceDatabaseName}.`
+      );
       return;
     }
 
     console.log(
-      `${applyChanges ? "Importing" : "Dry run:"} ${productsByName.size} shared products from ${sourceDatabaseName} into ${targetDatabaseName}.`,
+      `${applyChanges ? "Importing" : "Dry run:"} ${
+        productsByName.size
+      } shared products from ${sourceDatabaseName} into ${targetDatabaseName}.`
     );
 
     if (!applyChanges) {
@@ -86,16 +93,20 @@ async function main() {
           upsert: true,
         },
       })),
-      { ordered: false },
+      { ordered: false }
     );
 
-    console.log(`Import complete: ${result.upsertedCount} new shared products added.`);
+    console.log(
+      `Import complete: ${result.upsertedCount} new shared products added.`
+    );
   } finally {
     await client.close();
   }
 }
 
 main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : "Product import failed.");
+  console.error(
+    error instanceof Error ? error.message : "Product import failed."
+  );
   process.exitCode = 1;
 });

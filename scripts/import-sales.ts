@@ -36,7 +36,7 @@ config({ path: resolve(process.cwd(), ".env.local") });
 // Refuse to run in production
 if (process.env.NODE_ENV === "production") {
   console.error(
-    "ERROR: Refusing to run the import script in a production environment.",
+    "ERROR: Refusing to run the import script in a production environment."
   );
   process.exit(1);
 }
@@ -60,7 +60,7 @@ const flags = Object.fromEntries(
     .map((arg) => {
       const [key, ...rest] = arg.slice(2).split("=");
       return [key, rest.join("=")];
-    }),
+    })
 );
 
 const filePath = positional[0];
@@ -68,7 +68,9 @@ const storeName = positional[1] ?? "Store 1";
 const fromDate = flags.from; // e.g. "2025-11-12"
 const defaultYear = flags.year ? Number(flags.year) : undefined;
 if (!filePath) {
-  console.error('Usage: npx tsx scripts/import-sales.ts <path-to-file.xlsx> ["Store Name"] [--from=YYYY-MM-DD] [--year=YYYY]');
+  console.error(
+    'Usage: npx tsx scripts/import-sales.ts <path-to-file.xlsx> ["Store Name"] [--from=YYYY-MM-DD] [--year=YYYY]'
+  );
   process.exit(1);
 }
 if (fromDate && !/^\d{4}-\d{2}-\d{2}$/.test(fromDate)) {
@@ -81,12 +83,19 @@ if (flags.year && (!defaultYear || !Number.isInteger(defaultYear))) {
 }
 
 const SaleExpenseSchema = new mongoose.Schema(
-  { name: { type: String, required: true }, amount: { type: Number, required: true, min: 0 } },
-  { _id: false },
+  {
+    name: { type: String, required: true },
+    amount: { type: Number, required: true, min: 0 },
+  },
+  { _id: false }
 );
 const SaleSchema = new mongoose.Schema(
   {
-    franchise: { type: mongoose.Schema.Types.ObjectId, ref: "Franchise", required: true },
+    franchise: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Franchise",
+      required: true,
+    },
     date: { type: String, required: true, match: /^\d{4}-\d{2}-\d{2}$/ },
     totalSale: { type: Number, required: true, min: 0 },
     swiggy: { type: Number, required: true, min: 0 },
@@ -97,9 +106,13 @@ const SaleSchema = new mongoose.Schema(
     expenses: { type: [SaleExpenseSchema], default: [] },
     totalExpenses: { type: Number, required: true, min: 0 },
     bankingCash: { type: Number, required: true },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 SaleSchema.index({ franchise: 1, date: 1 }, { unique: true });
 
@@ -110,13 +123,16 @@ const FranchiseSchema = new mongoose.Schema({
 const UserSchema = new mongoose.Schema({ role: String });
 
 const Sale = mongoose.models.Sale ?? mongoose.model("Sale", SaleSchema);
-const Franchise = mongoose.models.Franchise ?? mongoose.model("Franchise", FranchiseSchema);
+const Franchise =
+  mongoose.models.Franchise ?? mongoose.model("Franchise", FranchiseSchema);
 const User = mongoose.models.User ?? mongoose.model("User", UserSchema);
 
 function cellText(value: ExcelJS.CellValue): string {
   if (value === null || value === undefined) return "";
-  if (typeof value === "object" && "text" in value) return String(value.text ?? "").trim();
-  if (typeof value === "object" && "result" in value) return String(value.result ?? "").trim();
+  if (typeof value === "object" && "text" in value)
+    return String(value.text ?? "").trim();
+  if (typeof value === "object" && "result" in value)
+    return String(value.result ?? "").trim();
   return String(value).trim();
 }
 
@@ -146,19 +162,42 @@ function toISODate(value: ExcelJS.CellValue): string | null {
   return null;
 }
 
-const MONTH_NAMES = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+const MONTH_NAMES = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+];
 
 /** Resolves the sheet's month (1-12) and year from its name, e.g. "October" or "October 2025". */
-function resolveSheetMonthYear(sheetName: string): { month: number; year: number | null } | null {
+function resolveSheetMonthYear(
+  sheetName: string
+): { month: number; year: number | null } | null {
   const lower = sheetName.toLowerCase();
-  const monthIndex = MONTH_NAMES.findIndex((name) => lower.includes(name) || lower.includes(name.slice(0, 3)));
+  const monthIndex = MONTH_NAMES.findIndex(
+    (name) => lower.includes(name) || lower.includes(name.slice(0, 3))
+  );
   if (monthIndex === -1) return null;
   const yearMatch = sheetName.match(/\b(20\d{2})\b/);
-  return { month: monthIndex + 1, year: yearMatch ? Number(yearMatch[1]) : null };
+  return {
+    month: monthIndex + 1,
+    year: yearMatch ? Number(yearMatch[1]) : null,
+  };
 }
 
 /** Resolves a day-only value like "19th" or "1" against the sheet's month/year. */
-function resolveDayOnlyDate(value: ExcelJS.CellValue, sheetName: string): string | null {
+function resolveDayOnlyDate(
+  value: ExcelJS.CellValue,
+  sheetName: string
+): string | null {
   const text = cellText(value);
   const dayMatch = text.match(/^(\d{1,2})(st|nd|rd|th)?$/i);
   if (!dayMatch) return null;
@@ -168,7 +207,9 @@ function resolveDayOnlyDate(value: ExcelJS.CellValue, sheetName: string): string
   if (!sheetMonth) return null;
   const year = sheetMonth.year ?? defaultYear;
   if (!year) return null;
-  return `${year}-${String(sheetMonth.month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  return `${year}-${String(sheetMonth.month).padStart(2, "0")}-${String(
+    day
+  ).padStart(2, "0")}`;
 }
 
 interface Candidate {
@@ -208,12 +249,18 @@ function readHeaderCells(worksheet: ExcelJS.Worksheet): HeaderCell[] {
   return cells;
 }
 
-function firstHeaderCol(headers: HeaderCell[], ...labels: string[]): number | undefined {
+function firstHeaderCol(
+  headers: HeaderCell[],
+  ...labels: string[]
+): number | undefined {
   return headers.find((h) => labels.includes(h.text))?.colNumber;
 }
 
 /** Finds every side "Date | Amount | Comments" (in either order) expense-breakup block after the main table's Date column. */
-function findExpenseBlocks(headers: HeaderCell[], mainDateCol: number): { dateCol: number; amountCol: number; nameCol: number }[] {
+function findExpenseBlocks(
+  headers: HeaderCell[],
+  mainDateCol: number
+): { dateCol: number; amountCol: number; nameCol: number }[] {
   const blocks: { dateCol: number; amountCol: number; nameCol: number }[] = [];
   for (let i = 0; i < headers.length; i += 1) {
     const header = headers[i];
@@ -223,9 +270,11 @@ function findExpenseBlocks(headers: HeaderCell[], mainDateCol: number): { dateCo
     for (const candidate of [headers[i + 1], headers[i + 2]]) {
       if (!candidate) continue;
       if (candidate.text === "amount") amountCol = candidate.colNumber;
-      if (candidate.text === "comments" || candidate.text === "comment") nameCol = candidate.colNumber;
+      if (candidate.text === "comments" || candidate.text === "comment")
+        nameCol = candidate.colNumber;
     }
-    if (amountCol && nameCol) blocks.push({ dateCol: header.colNumber, amountCol, nameCol });
+    if (amountCol && nameCol)
+      blocks.push({ dateCol: header.colNumber, amountCol, nameCol });
   }
   return blocks;
 }
@@ -233,7 +282,7 @@ function findExpenseBlocks(headers: HeaderCell[], mainDateCol: number): { dateCo
 /** Collects itemized expenses across every block/row in a sheet, grouped by resolved calendar date. Robust to Amount/Comments being swapped in a row. */
 function collectItemizedExpenses(
   worksheet: ExcelJS.Worksheet,
-  blocks: { dateCol: number; amountCol: number; nameCol: number }[],
+  blocks: { dateCol: number; amountCol: number; nameCol: number }[]
 ): Map<string, { name: string; amount: number }[]> {
   const byDate = new Map<string, { name: string; amount: number }[]>();
   for (const block of blocks) {
@@ -242,7 +291,8 @@ function collectItemizedExpenses(
       const row = worksheet.getRow(rowNumber);
       const dateValue = row.getCell(block.dateCol).value;
       // A blank date carries forward from the last filled date above it in this same table.
-      const resolvedDate = toISODate(dateValue) ?? resolveDayOnlyDate(dateValue, worksheet.name);
+      const resolvedDate =
+        toISODate(dateValue) ?? resolveDayOnlyDate(dateValue, worksheet.name);
       if (resolvedDate) currentDate = resolvedDate;
       const date = currentDate;
       if (!date) continue; // no date seen yet in this table — can't attribute this entry to a day
@@ -250,8 +300,15 @@ function collectItemizedExpenses(
       const cellA = row.getCell(block.amountCol).value;
       const cellB = row.getCell(block.nameCol).value;
       // Determine amount vs name by actual value type, since some rows have them swapped relative to the header.
-      const amount = typeof cellA === "number" ? cellA : typeof cellB === "number" ? cellB : 0;
-      const name = (typeof cellA === "number" ? cellText(cellB) : cellText(cellA)) || cellText(typeof cellA === "number" ? cellB : cellA);
+      const amount =
+        typeof cellA === "number"
+          ? cellA
+          : typeof cellB === "number"
+          ? cellB
+          : 0;
+      const name =
+        (typeof cellA === "number" ? cellText(cellB) : cellText(cellA)) ||
+        cellText(typeof cellA === "number" ? cellB : cellA);
       if (!amount || amount <= 0 || !name) continue;
 
       const list = byDate.get(date) ?? [];
@@ -265,7 +322,9 @@ function collectItemizedExpenses(
 async function run() {
   await mongoose.connect(MONGODB_URI as string, { dbName: MONGODB_DB });
 
-  const franchise = await Franchise.findOne({ name: new RegExp(`^${storeName}$`, "i") });
+  const franchise = await Franchise.findOne({
+    name: new RegExp(`^${storeName}$`, "i"),
+  });
   if (!franchise) {
     console.error(`Store "${storeName}" not found.`);
     await mongoose.disconnect();
@@ -278,7 +337,9 @@ async function run() {
     createdBy = admin?._id;
   }
   if (!createdBy) {
-    console.error("Could not determine a user to attribute imported sales to (no store owner or admin found).");
+    console.error(
+      "Could not determine a user to attribute imported sales to (no store owner or admin found)."
+    );
     await mongoose.disconnect();
     process.exit(1);
   }
@@ -296,14 +357,20 @@ async function run() {
     const saleCol = firstHeaderCol(headers, "sale");
     const swiggyCol = firstHeaderCol(headers, "swiggy");
     const zomatoCol = firstHeaderCol(headers, "zomato");
-    const combinedSwiggyZomatoCol = firstHeaderCol(headers, "swiggy/zomato", "swiggy / zomato");
+    const combinedSwiggyZomatoCol = firstHeaderCol(
+      headers,
+      "swiggy/zomato",
+      "swiggy / zomato"
+    );
     const paytmCol = firstHeaderCol(headers, "paytm");
     const expensesCol = firstHeaderCol(headers, "expenses");
     const chargesCol = firstHeaderCol(headers, "charges");
     const commentsCol = firstHeaderCol(headers, "comments");
 
     if (!dateCol || !saleCol) {
-      console.warn(`Sheet "${worksheet.name}": couldn't find Date/Sale columns, skipping sheet.`);
+      console.warn(
+        `Sheet "${worksheet.name}": couldn't find Date/Sale columns, skipping sheet.`
+      );
       continue;
     }
 
@@ -314,13 +381,22 @@ async function run() {
       const row = worksheet.getRow(rowNumber);
       const dateValue = row.getCell(dateCol).value;
       const saleValue = row.getCell(saleCol).value;
-      if (dateValue === null || dateValue === undefined || cellText(saleValue) === "") {
+      if (
+        dateValue === null ||
+        dateValue === undefined ||
+        cellText(saleValue) === ""
+      ) {
         continue; // blank/separator row
       }
 
-      const date = toISODate(dateValue) ?? resolveDayOnlyDate(dateValue, worksheet.name);
+      const date =
+        toISODate(dateValue) ?? resolveDayOnlyDate(dateValue, worksheet.name);
       if (!date) {
-        skippedInvalid.push({ sheet: worksheet.name, row: rowNumber, reason: `Unrecognized date value: "${cellText(dateValue)}"` });
+        skippedInvalid.push({
+          sheet: worksheet.name,
+          row: rowNumber,
+          reason: `Unrecognized date value: "${cellText(dateValue)}"`,
+        });
         continue;
       }
 
@@ -328,16 +404,30 @@ async function run() {
       const swiggy = swiggyCol
         ? toNumber(row.getCell(swiggyCol).value)
         : combinedSwiggyZomatoCol
-          ? toNumber(row.getCell(combinedSwiggyZomatoCol).value)
-          : 0;
+        ? toNumber(row.getCell(combinedSwiggyZomatoCol).value)
+        : 0;
       const zomato = zomatoCol ? toNumber(row.getCell(zomatoCol).value) : 0;
       const upi = paytmCol ? toNumber(row.getCell(paytmCol).value) : 0;
-      const upiCharge = chargesCol ? toNumber(row.getCell(chargesCol).value) : 0;
-      const expenseAmount = expensesCol ? toNumber(row.getCell(expensesCol).value) : 0;
-      const comment = commentsCol ? cellText(row.getCell(commentsCol).value) : "";
+      const upiCharge = chargesCol
+        ? toNumber(row.getCell(chargesCol).value)
+        : 0;
+      const expenseAmount = expensesCol
+        ? toNumber(row.getCell(expensesCol).value)
+        : 0;
+      const comment = commentsCol
+        ? cellText(row.getCell(commentsCol).value)
+        : "";
 
-      if ([totalSale, swiggy, zomato, upi, upiCharge, expenseAmount].some((value) => value < 0)) {
-        skippedInvalid.push({ sheet: worksheet.name, row: rowNumber, reason: "A required amount is negative." });
+      if (
+        [totalSale, swiggy, zomato, upi, upiCharge, expenseAmount].some(
+          (value) => value < 0
+        )
+      ) {
+        skippedInvalid.push({
+          sheet: worksheet.name,
+          row: rowNumber,
+          reason: "A required amount is negative.",
+        });
         continue;
       }
 
@@ -347,40 +437,83 @@ async function run() {
 
       // Prefer the itemized breakup (real names) over a lump sum; reconcile against the day's trusted Expenses total.
       const itemized = itemizedByDate.get(date) ?? [];
-      const itemizedTotal = itemized.reduce((sum, item) => sum + item.amount, 0);
+      const itemizedTotal = itemized.reduce(
+        (sum, item) => sum + item.amount,
+        0
+      );
       const expenseGap = totalExpenses - itemizedTotal; // >0: unexplained remainder; <0: itemized exceeds the sheet's total; 0: clean
 
-      candidates.push({ sheet: worksheet.name, row: rowNumber, date, totalSale, swiggy, zomato, upi, upiCharge, cash, expenses: itemized, totalExpenses, bankingCash, comment, expenseGap });
+      candidates.push({
+        sheet: worksheet.name,
+        row: rowNumber,
+        date,
+        totalSale,
+        swiggy,
+        zomato,
+        upi,
+        upiCharge,
+        cash,
+        expenses: itemized,
+        totalExpenses,
+        bankingCash,
+        comment,
+        expenseGap,
+      });
     }
   }
 
   candidates.sort((a, b) => a.date.localeCompare(b.date));
 
-  const beforeCutoff = fromDate ? candidates.filter((c) => c.date < fromDate) : [];
-  const afterCutoff = fromDate ? candidates.filter((c) => c.date >= fromDate) : candidates;
+  const beforeCutoff = fromDate
+    ? candidates.filter((c) => c.date < fromDate)
+    : [];
+  const afterCutoff = fromDate
+    ? candidates.filter((c) => c.date >= fromDate)
+    : candidates;
 
   const existingDates = new Set(
     (
-      await Sale.find({ franchise: franchise._id, date: { $in: afterCutoff.map((c) => c.date) } })
+      await Sale.find({
+        franchise: franchise._id,
+        date: { $in: afterCutoff.map((c) => c.date) },
+      })
         .select("date")
         .lean()
-    ).map((doc) => (doc as unknown as { date: string }).date),
+    ).map((doc) => (doc as unknown as { date: string }).date)
   );
   const alreadyExists = afterCutoff.filter((c) => existingDates.has(c.date));
   const toReview = afterCutoff.filter((c) => !existingDates.has(c.date));
 
   console.log(`Store: ${franchise.name}`);
   console.log(`Rows parsed: ${candidates.length}`);
-  if (fromDate) console.log(`Skipped (before ${fromDate}): ${beforeCutoff.length}`);
+  if (fromDate)
+    console.log(`Skipped (before ${fromDate}): ${beforeCutoff.length}`);
   console.log(`Skipped (already in database): ${alreadyExists.length}`);
   console.log(`Skipped (invalid): ${skippedInvalid.length}`);
   console.log(`Awaiting your confirmation: ${toReview.length}\n`);
 
   if (flags["dry-run"] !== undefined) {
-    console.log("Dry run — no prompts, nothing written. Rows that would be reviewed:");
+    console.log(
+      "Dry run — no prompts, nothing written. Rows that would be reviewed:"
+    );
     for (const candidate of toReview) {
-      const gapNote = candidate.expenseGap > 0 ? ` ⚠ ₹${candidate.expenseGap} unexplained` : candidate.expenseGap < 0 ? ` ⚠ itemized exceeds total by ₹${-candidate.expenseGap}` : "";
-      console.log(`  ${candidate.date} (sheet "${candidate.sheet}", row ${candidate.row}) — Sale: ${candidate.totalSale}, Swiggy: ${candidate.swiggy}, Zomato: ${candidate.zomato}, Expenses: ${candidate.totalExpenses} [${candidate.expenses.map((item) => `${item.name}=${item.amount}`).join(", ")}]${gapNote}`);
+      const gapNote =
+        candidate.expenseGap > 0
+          ? ` ⚠ ₹${candidate.expenseGap} unexplained`
+          : candidate.expenseGap < 0
+          ? ` ⚠ itemized exceeds total by ₹${-candidate.expenseGap}`
+          : "";
+      console.log(
+        `  ${candidate.date} (sheet "${candidate.sheet}", row ${
+          candidate.row
+        }) — Sale: ${candidate.totalSale}, Swiggy: ${
+          candidate.swiggy
+        }, Zomato: ${candidate.zomato}, Expenses: ${
+          candidate.totalExpenses
+        } [${candidate.expenses
+          .map((item) => `${item.name}=${item.amount}`)
+          .join(", ")}]${gapNote}`
+      );
     }
     if (skippedInvalid.length > 0) {
       console.log("\nInvalid rows:");
@@ -406,44 +539,88 @@ async function run() {
 
     if (candidate.expenseGap > 0) {
       // Unexplained remainder — auto-label it "General" rather than asking every time.
-      finalExpenses = [...candidate.expenses, { name: "General", amount: candidate.expenseGap }];
-      differenceLog.push({ date: candidate.date, note: `₹${candidate.expenseGap} labeled "General"` });
+      finalExpenses = [
+        ...candidate.expenses,
+        { name: "General", amount: candidate.expenseGap },
+      ];
+      differenceLog.push({
+        date: candidate.date,
+        note: `₹${candidate.expenseGap} labeled "General"`,
+      });
     } else if (candidate.expenseGap < 0) {
-      console.log(`\n${candidate.date} (sheet "${candidate.sheet}", row ${candidate.row})`);
+      console.log(
+        `\n${candidate.date} (sheet "${candidate.sheet}", row ${candidate.row})`
+      );
       if (candidate.expenses.length > 0) {
-        console.log(`  Itemized: ${candidate.expenses.map((item) => `${item.name}=${item.amount}`).join(", ")}`);
+        console.log(
+          `  Itemized: ${candidate.expenses
+            .map((item) => `${item.name}=${item.amount}`)
+            .join(", ")}`
+        );
       }
       if (candidate.comment) console.log(`  Comment: ${candidate.comment}`);
 
       const excess = -candidate.expenseGap;
       const itemizedTotal = candidate.totalExpenses - candidate.expenseGap;
-      console.log(`  ⚠ Itemized expenses (₹${itemizedTotal}) exceed the sheet's Expenses total (₹${candidate.totalExpenses}) by ₹${excess}.`);
-      const answer = (await rl.question(`  Enter the correct total, or Enter to use ₹${itemizedTotal}, 'skip' this day, 'quit': `)).trim();
+      console.log(
+        `  ⚠ Itemized expenses (₹${itemizedTotal}) exceed the sheet's Expenses total (₹${candidate.totalExpenses}) by ₹${excess}.`
+      );
+      const answer = (
+        await rl.question(
+          `  Enter the correct total, or Enter to use ₹${itemizedTotal}, 'skip' this day, 'quit': `
+        )
+      ).trim();
       if (answer.toLowerCase() === "quit" || answer.toLowerCase() === "q") {
         aborted = true;
-        differenceLog.push({ date: candidate.date, note: "quit before resolving" });
+        differenceLog.push({
+          date: candidate.date,
+          note: "quit before resolving",
+        });
         break;
-      } else if (answer.toLowerCase() === "skip" || answer.toLowerCase() === "n") {
+      } else if (
+        answer.toLowerCase() === "skip" ||
+        answer.toLowerCase() === "n"
+      ) {
         skipThisDay = true;
         differenceLog.push({ date: candidate.date, note: "skipped" });
       } else {
         let overrideTotal = answer ? Number(answer) : itemizedTotal;
         let attempts = 0;
         // Guard against typos/echo glitches producing an implausible amount (e.g. a doubled-up number).
-        while (Number.isFinite(overrideTotal) && overrideTotal > candidate.totalSale && attempts < 3) {
-          const confirm = (await rl.question(`  ₹${overrideTotal} is more than the day's Sale (₹${candidate.totalSale}) — that looks like a typo. Re-enter the total, or 'skip': `)).trim();
-          if (confirm.toLowerCase() === "skip" || confirm.toLowerCase() === "n") { overrideTotal = NaN; break; }
+        while (
+          Number.isFinite(overrideTotal) &&
+          overrideTotal > candidate.totalSale &&
+          attempts < 3
+        ) {
+          const confirm = (
+            await rl.question(
+              `  ₹${overrideTotal} is more than the day's Sale (₹${candidate.totalSale}) — that looks like a typo. Re-enter the total, or 'skip': `
+            )
+          ).trim();
+          if (
+            confirm.toLowerCase() === "skip" ||
+            confirm.toLowerCase() === "n"
+          ) {
+            overrideTotal = NaN;
+            break;
+          }
           overrideTotal = confirm ? Number(confirm) : itemizedTotal;
           attempts += 1;
         }
         if (!Number.isFinite(overrideTotal) || overrideTotal < 0) {
           console.log("  Invalid amount, skipping this day.");
           skipThisDay = true;
-          differenceLog.push({ date: candidate.date, note: "skipped (invalid override amount entered)" });
+          differenceLog.push({
+            date: candidate.date,
+            note: "skipped (invalid override amount entered)",
+          });
         } else {
           finalTotalExpenses = overrideTotal;
           finalBankingCash = candidate.cash - overrideTotal;
-          differenceLog.push({ date: candidate.date, note: `total set to ₹${overrideTotal}` });
+          differenceLog.push({
+            date: candidate.date,
+            note: `total set to ₹${overrideTotal}`,
+          });
         }
       }
     }
@@ -471,21 +648,34 @@ async function run() {
       inserted += 1;
       if (candidate.expenseGap !== 0) console.log("  ✓ Saved.");
     } catch (err) {
-      if (typeof err === "object" && err !== null && "code" in err && (err as { code?: number }).code === 11000) {
+      if (
+        typeof err === "object" &&
+        err !== null &&
+        "code" in err &&
+        (err as { code?: number }).code === 11000
+      ) {
         console.log(`  ✗ ${candidate.date} already exists, skipped.`);
       } else {
-        console.log(`  ✗ ${candidate.date} failed to save: ${err instanceof Error ? err.message : String(err)}`);
+        console.log(
+          `  ✗ ${candidate.date} failed to save: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
       }
     }
   }
   rl.close();
 
   console.log("\nImport finished.");
-  if (aborted) console.log("(Stopped early at your request — remaining rows were not reviewed.)");
+  if (aborted)
+    console.log(
+      "(Stopped early at your request — remaining rows were not reviewed.)"
+    );
   console.log(`  Inserted: ${inserted}`);
   console.log(`  Skipped by you: ${skippedByUser}`);
   console.log(`  Skipped (already existed): ${alreadyExists.length}`);
-  if (fromDate) console.log(`  Skipped (before cutoff): ${beforeCutoff.length}`);
+  if (fromDate)
+    console.log(`  Skipped (before cutoff): ${beforeCutoff.length}`);
   console.log(`  Skipped (invalid): ${skippedInvalid.length}`);
   if (skippedInvalid.length > 0) {
     console.log("\nInvalid rows:");

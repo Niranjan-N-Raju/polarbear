@@ -17,11 +17,19 @@ export function getSafeNextPath(path: string | null): string | null {
     return null;
   }
   if (url.origin !== SAFE_NEXT_BASE) return null;
-  if (url.pathname === "/api" || url.pathname.startsWith("/api/") || path.startsWith("/api/")) return null;
+  if (
+    url.pathname === "/api" ||
+    url.pathname.startsWith("/api/") ||
+    path.startsWith("/api/")
+  )
+    return null;
   return path;
 }
 
-export function validateLoginForm(email: string, password: string): {
+export function validateLoginForm(
+  email: string,
+  password: string
+): {
   emailError: string;
   passwordError: string;
 } {

@@ -31,10 +31,12 @@ let dummyHashPromise: Promise<string> | null = null;
 
 /** Lazily computed bcrypt hash used to equalise timing when the email is unknown. */
 function getDummyHash(): Promise<string> {
-  dummyHashPromise ??= bcrypt.hash("polar-bear-timing-equaliser", 12).catch((error) => {
-    dummyHashPromise = null;
-    throw error;
-  });
+  dummyHashPromise ??= bcrypt
+    .hash("polar-bear-timing-equaliser", 12)
+    .catch((error) => {
+      dummyHashPromise = null;
+      throw error;
+    });
   return dummyHashPromise;
 }
 
@@ -60,10 +62,10 @@ export async function POST(request: NextRequest) {
         status: 429,
         headers: {
           "Retry-After": String(
-            Math.ceil((rateCheck.retryAfterMs ?? 0) / 1000),
+            Math.ceil((rateCheck.retryAfterMs ?? 0) / 1000)
           ),
         },
-      },
+      }
     );
   }
 
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { message: parsed.error.issues[0]?.message ?? "Invalid input." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -86,10 +88,20 @@ export async function POST(request: NextRequest) {
     const email = parsed.data.email.toLowerCase().trim();
     const accountRateCheck = checkLoginAccountRateLimit(email, ip);
     if (!accountRateCheck.allowed) {
-      auditLog("auth.login.failed", { ip, metadata: { reason: "account_rate_limited" } });
+      auditLog("auth.login.failed", {
+        ip,
+        metadata: { reason: "account_rate_limited" },
+      });
       return NextResponse.json(
         { message: "Too many login attempts. Please try again later." },
-        { status: 429, headers: { "Retry-After": String(Math.ceil((accountRateCheck.retryAfterMs ?? 0) / 1000)) } },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(
+              Math.ceil((accountRateCheck.retryAfterMs ?? 0) / 1000)
+            ),
+          },
+        }
       );
     }
 
@@ -98,28 +110,37 @@ export async function POST(request: NextRequest) {
     const user = await User.findOne({
       email,
       isActive: { $ne: false },
-    }).select("password name role email franchises sessionVersion mustChangePassword");
+    }).select(
+      "password name role email franchises sessionVersion mustChangePassword"
+    );
 
     if (!user) {
       // Spend comparable time to a real check so response timing doesn't reveal unknown emails.
       await bcrypt.compare(password, await getDummyHash());
       auditLog("auth.login.failed", {
         ip,
-        metadata: { emailHash: emailFingerprint(email), reason: "user_not_found" },
+        metadata: {
+          emailHash: emailFingerprint(email),
+          reason: "user_not_found",
+        },
       });
       return NextResponse.json(
         { message: "Invalid email or password." },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      auditLog("auth.login.failed", { ip, targetId: String(user._id), metadata: { reason: "wrong_password" } });
+      auditLog("auth.login.failed", {
+        ip,
+        targetId: String(user._id),
+        metadata: { reason: "wrong_password" },
+      });
       return NextResponse.json(
         { message: "Invalid email or password." },
-        { status: 401 },
+        { status: 401 }
       );
     }
 
@@ -136,7 +157,7 @@ export async function POST(request: NextRequest) {
       if (assignedCount === 0 && createdCount === 0) {
         return NextResponse.json(
           { message: "No stores are associated with this user." },
-          { status: 403 },
+          { status: 403 }
         );
       }
     }
@@ -156,10 +177,14 @@ export async function POST(request: NextRequest) {
         sessionStart: nowSeconds(),
         mustChangePassword,
       },
-      getJwtSecret(),
+      getJwtSecret()
     );
 
-    auditLog("auth.login.success", { actorId: String(user._id), actorRole: user.role, ip });
+    auditLog("auth.login.success", {
+      actorId: String(user._id),
+      actorRole: user.role,
+      ip,
+    });
 
     const response = NextResponse.json(
       {
@@ -173,7 +198,7 @@ export async function POST(request: NextRequest) {
         },
         mustChangePassword,
       },
-      { status: 200 },
+      { status: 200 }
     );
 
     if (mustChangePassword) {
@@ -190,7 +215,7 @@ export async function POST(request: NextRequest) {
     console.error("[LOGIN_ERROR]", error);
     return NextResponse.json(
       { message: "An internal server error occurred." },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

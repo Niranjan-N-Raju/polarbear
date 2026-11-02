@@ -12,7 +12,9 @@ import { PaymentMixChart } from "./components/PaymentMixChart";
 import { useDashboardData } from "./hooks/useDashboardData";
 
 export default function DashboardPage() {
-  useEffect(() => { document.title = "Dashboard · Polar Bear"; }, []);
+  useEffect(() => {
+    document.title = "Dashboard · Polar Bear";
+  }, []);
   const dashboard = useDashboardData();
   const {
     activeStoreId,
@@ -33,9 +35,15 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-brand-beige bg-white/80 p-6 shadow-[0_10px_30px_rgba(36,50,58,0.05)]">
         <div>
-          <p className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-brand-orange sm:block">Operations overview</p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">Dashboard</h2>
-          <p className="mt-2 text-sm text-gray-500">A clear view of the work happening across your stores.</p>
+          <p className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-brand-orange sm:block">
+            Operations overview
+          </p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">
+            Dashboard
+          </h2>
+          <p className="mt-2 text-sm text-gray-500">
+            A clear view of the work happening across your stores.
+          </p>
         </div>
       </div>
 
@@ -53,10 +61,15 @@ export default function DashboardPage() {
         <div className="relative rounded-xl border border-gray-200 border-t-[3px] border-t-brand-teal bg-white p-5">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.1em] text-gray-500">Sales Trend</p>
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-gray-500">
+                Sales Trend
+              </p>
               <div className="mt-2 flex flex-wrap items-end gap-3">
                 <div>
-                  <label htmlFor="dashboard-filter-from" className="block text-xs font-medium text-gray-500 mb-1">
+                  <label
+                    htmlFor="dashboard-filter-from"
+                    className="block text-xs font-medium text-gray-500 mb-1"
+                  >
                     From
                   </label>
                   <DatePicker
@@ -68,7 +81,10 @@ export default function DashboardPage() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="dashboard-filter-to" className="block text-xs font-medium text-gray-500 mb-1">
+                  <label
+                    htmlFor="dashboard-filter-to"
+                    className="block text-xs font-medium text-gray-500 mb-1"
+                  >
                     To
                   </label>
                   <DatePicker
@@ -100,61 +116,107 @@ export default function DashboardPage() {
             </div>
           </div>
           {dateFrom > dateTo ? (
-            <p className="mt-4 text-xs text-red-600">From date must be before the To date.</p>
+            <p className="mt-4 text-xs text-red-600">
+              From date must be before the To date.
+            </p>
           ) : (
-            <SalesTrendChart sales={dailySales} dateFrom={dateFrom} dateTo={dateTo} />
+            <SalesTrendChart
+              sales={dailySales}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+            />
           )}
         </div>
       )}
 
-      {!loading && !hasError && isFranchiseAdmin && activeStoreId && stats?.attritionTrend && (
-        <div className="relative rounded-xl border border-gray-200 border-t-[3px] border-t-brand-orange bg-white p-5">
-          <p className="text-xs font-bold uppercase tracking-[0.1em] text-gray-500">Employee Attrition Rate</p>
-          <p className="mt-1 text-xs text-gray-400">Employees who left each month vs. headcount at the start of that month · last 6 months</p>
-          {stats.attritionTrend.every((month) => month.headcount === 0) ? (
-            <p className="mt-4 text-sm text-gray-500">No employee history yet for this store.</p>
-          ) : (
-            <AttritionChart trend={stats.attritionTrend} />
-          )}
-        </div>
-      )}
+      {!loading &&
+        !hasError &&
+        isFranchiseAdmin &&
+        activeStoreId &&
+        stats?.attritionTrend && (
+          <div className="relative rounded-xl border border-gray-200 border-t-[3px] border-t-brand-orange bg-white p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.1em] text-gray-500">
+              Employee Attrition Rate
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              Employees who left each month vs. headcount at the start of that
+              month · last 6 months
+            </p>
+            {stats.attritionTrend.every((month) => month.headcount === 0) ? (
+              <p className="mt-4 text-sm text-gray-500">
+                No employee history yet for this store.
+              </p>
+            ) : (
+              <AttritionChart trend={stats.attritionTrend} />
+            )}
+          </div>
+        )}
 
-      {!loading && !hasError && isFranchiseAdmin && activeStoreId && stats?.weekdayPerformance && (
-        <div className="relative rounded-xl border border-gray-200 border-t-[3px] border-t-brand-teal bg-white p-5">
-          <p className="text-xs font-bold uppercase tracking-[0.1em] text-gray-500">Sales by Day of Week</p>
-          <p className="mt-1 text-xs text-gray-400">Average daily sale for each weekday, across all recorded sales</p>
-          {stats.weekdayPerformance.every((day) => day.average === 0) ? (
-            <p className="mt-4 text-sm text-gray-500">No sales history yet for this store.</p>
-          ) : (
-            <WeekdayPerformanceChart data={stats.weekdayPerformance} />
-          )}
-        </div>
-      )}
+      {!loading &&
+        !hasError &&
+        isFranchiseAdmin &&
+        activeStoreId &&
+        stats?.weekdayPerformance && (
+          <div className="relative rounded-xl border border-gray-200 border-t-[3px] border-t-brand-teal bg-white p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.1em] text-gray-500">
+              Sales by Day of Week
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              Average daily sale for each weekday, across all recorded sales
+            </p>
+            {stats.weekdayPerformance.every((day) => day.average === 0) ? (
+              <p className="mt-4 text-sm text-gray-500">
+                No sales history yet for this store.
+              </p>
+            ) : (
+              <WeekdayPerformanceChart data={stats.weekdayPerformance} />
+            )}
+          </div>
+        )}
 
-      {!loading && !hasError && isFranchiseAdmin && activeStoreId && stats?.expenseBreakdown && (
-        <div className="relative rounded-xl border border-gray-200 border-t-[3px] border-t-brand-orange bg-white p-5">
-          <p className="text-xs font-bold uppercase tracking-[0.1em] text-gray-500">Top Expense Categories</p>
-          <p className="mt-1 text-xs text-gray-400">Highest-spend expense categories, across all recorded sales</p>
-          {stats.expenseBreakdown.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-500">No expenses recorded yet for this store.</p>
-          ) : (
-            <ExpenseBreakdownChart items={stats.expenseBreakdown} />
-          )}
-        </div>
-      )}
+      {!loading &&
+        !hasError &&
+        isFranchiseAdmin &&
+        activeStoreId &&
+        stats?.expenseBreakdown && (
+          <div className="relative rounded-xl border border-gray-200 border-t-[3px] border-t-brand-orange bg-white p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.1em] text-gray-500">
+              Top Expense Categories
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              Highest-spend expense categories, across all recorded sales
+            </p>
+            {stats.expenseBreakdown.length === 0 ? (
+              <p className="mt-4 text-sm text-gray-500">
+                No expenses recorded yet for this store.
+              </p>
+            ) : (
+              <ExpenseBreakdownChart items={stats.expenseBreakdown} />
+            )}
+          </div>
+        )}
 
-      {!loading && !hasError && isFranchiseAdmin && activeStoreId && stats?.paymentMixTrend && (
-        <div className="relative rounded-xl border border-gray-200 border-t-[3px] border-t-brand-teal bg-white p-5">
-          <p className="text-xs font-bold uppercase tracking-[0.1em] text-gray-500">Payment Mix Trend</p>
-          <p className="mt-1 text-xs text-gray-400">Online vs UPI vs cash share of sales · last 6 months</p>
-          {stats.paymentMixTrend.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-500">No sales history yet for this store.</p>
-          ) : (
-            <PaymentMixChart trend={stats.paymentMixTrend} />
-          )}
-        </div>
-      )}
-
+      {!loading &&
+        !hasError &&
+        isFranchiseAdmin &&
+        activeStoreId &&
+        stats?.paymentMixTrend && (
+          <div className="relative rounded-xl border border-gray-200 border-t-[3px] border-t-brand-teal bg-white p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.1em] text-gray-500">
+              Payment Mix Trend
+            </p>
+            <p className="mt-1 text-xs text-gray-400">
+              Online vs UPI vs cash share of sales · last 6 months
+            </p>
+            {stats.paymentMixTrend.length === 0 ? (
+              <p className="mt-4 text-sm text-gray-500">
+                No sales history yet for this store.
+              </p>
+            ) : (
+              <PaymentMixChart trend={stats.paymentMixTrend} />
+            )}
+          </div>
+        )}
     </div>
   );
 }

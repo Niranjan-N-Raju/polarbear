@@ -29,13 +29,20 @@ export async function GET(request: NextRequest) {
   const auth = authResult;
 
   const params = new URL(request.url).searchParams;
-  const franchiseId = await getAuthorizedStoreAdminId(auth, params.get("franchiseId"));
+  const franchiseId = await getAuthorizedStoreAdminId(
+    auth,
+    params.get("franchiseId")
+  );
   if (!franchiseId) {
-    return NextResponse.json({ message: "A valid store is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid store is required." },
+      { status: 400 }
+    );
   }
   const from = params.get("from");
   const to = params.get("to");
-  const hasRange = !!from && !!to && DATE_PATTERN.test(from) && DATE_PATTERN.test(to);
+  const hasRange =
+    !!from && !!to && DATE_PATTERN.test(from) && DATE_PATTERN.test(to);
 
   await connectToDatabase();
   const sales = await Sale.find({
@@ -72,23 +79,39 @@ export async function POST(request: NextRequest) {
   const jsonBody = await readJsonObject<SalePayload>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
-  const franchiseId = await getAuthorizedStoreAdminId(auth, body.franchiseId ?? null);
+  const franchiseId = await getAuthorizedStoreAdminId(
+    auth,
+    body.franchiseId ?? null
+  );
   if (!franchiseId) {
-    return NextResponse.json({ message: "A valid store is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid store is required." },
+      { status: 400 }
+    );
   }
   const validation = validateSalePayload(body);
-  if ("error" in validation) return NextResponse.json({ message: validation.error }, { status: 400 });
-  const { date, totalSale, swiggy, zomato, upi, upiCharge, expenses } = validation.value;
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  if ("error" in validation)
+    return NextResponse.json({ message: validation.error }, { status: 400 });
+  const { date, totalSale, swiggy, zomato, upi, upiCharge, expenses } =
+    validation.value;
+  const totalExpenses = expenses.reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  );
   const cash = totalSale - swiggy - zomato - upi;
   const bankingCash = cash - totalExpenses;
 
   await connectToDatabase();
-  const existing = await Sale.findOne({ franchise: franchiseId, date }).select("_id").lean();
+  const existing = await Sale.findOne({ franchise: franchiseId, date })
+    .select("_id")
+    .lean();
   if (existing) {
     return NextResponse.json(
-      { message: "A sale already exists for this date. Edit the existing entry instead." },
-      { status: 409 },
+      {
+        message:
+          "A sale already exists for this date. Edit the existing entry instead.",
+      },
+      { status: 409 }
     );
   }
 
@@ -107,12 +130,22 @@ export async function POST(request: NextRequest) {
       bankingCash,
       createdBy: auth.id,
     });
-    return NextResponse.json({ message: "Sale saved successfully.", id: String(sale._id) });
+    return NextResponse.json({
+      message: "Sale saved successfully.",
+      id: String(sale._id),
+    });
   } catch (createError) {
-    if (createError instanceof Error && "code" in createError && createError.code === 11000) {
+    if (
+      createError instanceof Error &&
+      "code" in createError &&
+      createError.code === 11000
+    ) {
       return NextResponse.json(
-        { message: "A sale already exists for this date. Edit the existing entry instead." },
-        { status: 409 },
+        {
+          message:
+            "A sale already exists for this date. Edit the existing entry instead.",
+        },
+        { status: 409 }
       );
     }
     throw createError;

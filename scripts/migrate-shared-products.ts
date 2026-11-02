@@ -34,14 +34,18 @@ async function main() {
     const products = db.collection<ProductDocument>("products");
     const inventory = db.collection("inventory_items");
     const dumpedInventory = db.collection("dumped_inventory");
-    const documents = await products.find({ name: { $type: "string" } }).toArray();
+    const documents = await products
+      .find({ name: { $type: "string" } })
+      .toArray();
     const groups = new Map<string, ProductDocument[]>();
 
     for (const product of documents) {
       const name = product.name.trim();
       const normalizedName = normalizeName(name);
       if (!name || name.length > 100) {
-        throw new Error(`Invalid product name: ${JSON.stringify(product.name)}`);
+        throw new Error(
+          `Invalid product name: ${JSON.stringify(product.name)}`
+        );
       }
       const group = groups.get(normalizedName) ?? [];
       group.push({ ...product, name, normalizedName });
@@ -65,12 +69,23 @@ async function main() {
         if (referenceDifference !== 0) return referenceDifference;
         return String(left._id).localeCompare(String(right._id));
       });
-      return { normalizedName, canonical: ordered[0], duplicates: ordered.slice(1) };
+      return {
+        normalizedName,
+        canonical: ordered[0],
+        duplicates: ordered.slice(1),
+      };
     });
-    const duplicateCount = plans.reduce((count, plan) => count + plan.duplicates.length, 0);
+    const duplicateCount = plans.reduce(
+      (count, plan) => count + plan.duplicates.length,
+      0
+    );
 
     console.log(
-      `${applyChanges ? "Migrating" : "Dry run:"} ${documents.length} product records into ${groups.size} shared products; ${duplicateCount} duplicates to merge in ${databaseName}.`,
+      `${applyChanges ? "Migrating" : "Dry run:"} ${
+        documents.length
+      } product records into ${
+        groups.size
+      } shared products; ${duplicateCount} duplicates to merge in ${databaseName}.`
     );
     if (!applyChanges) {
       console.log("No database changes made. Run with --apply to migrate.");
@@ -79,8 +94,7 @@ async function main() {
 
     const indexes = await products.listIndexes().toArray();
     const storeScopedIndex = indexes.find(
-      (index) =>
-        index.key.storeId === 1 && index.key.normalizedName === 1,
+      (index) => index.key.storeId === 1 && index.key.normalizedName === 1
     );
     if (storeScopedIndex?.name) {
       await products.dropIndex(storeScopedIndex.name);
@@ -90,7 +104,9 @@ async function main() {
     for (const plan of plans) {
       const { canonical, normalizedName } = plan;
       for (const duplicate of plan.duplicates) {
-        const inventoryRows = await inventory.find({ productId: duplicate._id }).toArray();
+        const inventoryRows = await inventory
+          .find({ productId: duplicate._id })
+          .toArray();
         for (const row of inventoryRows) {
           const existingRow = await inventory.findOne({
             storeId: row.storeId,
@@ -100,13 +116,16 @@ async function main() {
           if (existingRow) {
             await inventory.updateOne(
               { _id: existingRow._id },
-              { $inc: { quantity: row.quantity }, $set: { product: canonical.name } },
+              {
+                $inc: { quantity: row.quantity },
+                $set: { product: canonical.name },
+              }
             );
             await inventory.deleteOne({ _id: row._id });
           } else {
             await inventory.updateOne(
               { _id: row._id },
-              { $set: { productId: canonical._id, product: canonical.name } },
+              { $set: { productId: canonical._id, product: canonical.name } }
             );
           }
           repointedReferences++;
@@ -114,7 +133,7 @@ async function main() {
 
         const dumpedResult = await dumpedInventory.updateMany(
           { productId: duplicate._id },
-          { $set: { productId: canonical._id, product: canonical.name } },
+          { $set: { productId: canonical._id, product: canonical.name } }
         );
         repointedReferences += dumpedResult.modifiedCount;
         await products.deleteOne({ _id: duplicate._id });
@@ -122,13 +141,16 @@ async function main() {
 
       await products.updateOne(
         { _id: canonical._id },
-        { $set: { name: canonical.name, normalizedName }, $unset: { storeId: "" } },
+        {
+          $set: { name: canonical.name, normalizedName },
+          $unset: { storeId: "" },
+        }
       );
     }
 
     await products.createIndex({ normalizedName: 1 }, { unique: true });
     console.log(
-      `Migration complete: ${groups.size} shared products, ${duplicateCount} duplicates merged, ${repointedReferences} stock/history references updated.`,
+      `Migration complete: ${groups.size} shared products, ${duplicateCount} duplicates merged, ${repointedReferences} stock/history references updated.`
     );
   } finally {
     await client.close();
@@ -136,6 +158,8 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : "Shared product migration failed.");
+  console.error(
+    error instanceof Error ? error.message : "Shared product migration failed."
+  );
   process.exitCode = 1;
 });

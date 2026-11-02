@@ -10,7 +10,7 @@ import type { WithdrawalPayload } from "@/lib/withdrawals/validation";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
@@ -21,24 +21,34 @@ export async function PUT(
 
   const { id } = await params;
   if (!mongoose.isValidObjectId(id)) {
-    return NextResponse.json({ message: "A valid entry id is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid entry id is required." },
+      { status: 400 }
+    );
   }
 
   const jsonBody = await readJsonObject<WithdrawalPayload>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
-  const franchiseId = await getAuthorizedStoreAdminId(auth, body.franchiseId ?? null);
+  const franchiseId = await getAuthorizedStoreAdminId(
+    auth,
+    body.franchiseId ?? null
+  );
   if (!franchiseId) {
-    return NextResponse.json({ message: "A valid store is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid store is required." },
+      { status: 400 }
+    );
   }
   const validation = validateWithdrawalPayload(body);
-  if ("error" in validation) return NextResponse.json({ message: validation.error }, { status: 400 });
+  if ("error" in validation)
+    return NextResponse.json({ message: validation.error }, { status: 400 });
 
   await connectToDatabase();
   const updated = await Withdrawal.findOneAndUpdate(
     { _id: id, franchise: franchiseId },
     { $set: validation.value },
-    { new: true },
+    { new: true }
   ).lean();
   if (!updated) {
     return NextResponse.json({ message: "Entry not found." }, { status: 404 });
@@ -58,7 +68,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
@@ -69,16 +79,28 @@ export async function DELETE(
 
   const { id } = await params;
   if (!mongoose.isValidObjectId(id)) {
-    return NextResponse.json({ message: "A valid entry id is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid entry id is required." },
+      { status: 400 }
+    );
   }
 
-  const franchiseId = await getAuthorizedStoreAdminId(auth, new URL(request.url).searchParams.get("franchiseId"));
+  const franchiseId = await getAuthorizedStoreAdminId(
+    auth,
+    new URL(request.url).searchParams.get("franchiseId")
+  );
   if (!franchiseId) {
-    return NextResponse.json({ message: "A valid store is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid store is required." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
-  const deleted = await Withdrawal.findOneAndDelete({ _id: id, franchise: franchiseId }).lean();
+  const deleted = await Withdrawal.findOneAndDelete({
+    _id: id,
+    franchise: franchiseId,
+  }).lean();
   if (!deleted) {
     return NextResponse.json({ message: "Entry not found." }, { status: 404 });
   }

@@ -24,7 +24,7 @@ export function passwordChangeRequiredResponse(): NextResponse {
       message: "You must change your password before continuing.",
       code: PASSWORD_CHANGE_REQUIRED_CODE,
     },
-    { status: 403 },
+    { status: 403 }
   );
 }
 
@@ -34,7 +34,8 @@ export function passwordChangeRequiredResponse(): NextResponse {
  */
 export async function requireAuth(): Promise<AuthInfo | NextResponse> {
   const auth = await getAuthInfo();
-  if (!auth) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  if (!auth)
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   if (auth.mustChangePassword) return passwordChangeRequiredResponse();
   return auth;
 }
@@ -45,9 +46,10 @@ export async function requireAuth(): Promise<AuthInfo | NextResponse> {
  */
 export async function getAuthorizedStoreId(
   auth: AuthInfo,
-  requestedId: string | null | undefined,
+  requestedId: string | null | undefined
 ): Promise<string | null> {
-  if (typeof requestedId !== "string" || !/^[a-f\d]{24}$/i.test(requestedId)) return null;
+  if (typeof requestedId !== "string" || !/^[a-f\d]{24}$/i.test(requestedId))
+    return null;
   if (auth.role === "admin") return requestedId;
   if (auth.role === "sub_admin") {
     const denied = await getUnauthorizedFranchiseIds(auth, [requestedId]);
@@ -59,7 +61,7 @@ export async function getAuthorizedStoreId(
 
 export async function getAuthorizedStoreAdminId(
   auth: AuthInfo,
-  requestedId: string | null | undefined,
+  requestedId: string | null | undefined
 ): Promise<string | null> {
   if (auth.role !== "franchise_admin") return null;
   return getAuthorizedStoreId(auth, requestedId);
@@ -67,17 +69,25 @@ export async function getAuthorizedStoreAdminId(
 
 export async function getStoreAccess(
   request: NextRequest,
-  parameter = "storeId",
+  parameter = "storeId"
 ): Promise<StoreAccessResult> {
   const authResult = await requireAuth();
   if (authResult instanceof NextResponse) return { response: authResult };
   if (authResult.role !== "franchise_admin") {
-    return { response: NextResponse.json({ message: "Forbidden" }, { status: 403 }) };
+    return {
+      response: NextResponse.json({ message: "Forbidden" }, { status: 403 }),
+    };
   }
   const storeId = await getAuthorizedStoreId(
     authResult,
-    new URL(request.url).searchParams.get(parameter),
+    new URL(request.url).searchParams.get(parameter)
   );
-  if (!storeId) return { response: NextResponse.json({ message: "Access denied." }, { status: 403 }) };
+  if (!storeId)
+    return {
+      response: NextResponse.json(
+        { message: "Access denied." },
+        { status: 403 }
+      ),
+    };
   return { auth: authResult, storeId };
 }

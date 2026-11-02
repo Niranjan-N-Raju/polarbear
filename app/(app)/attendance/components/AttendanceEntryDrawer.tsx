@@ -105,14 +105,18 @@ export function AttendanceEntryDrawer(props: Props) {
     .filter((employee): employee is AttendanceEmployee => Boolean(employee));
   const bulkTotalRecords = bulkSelectedEmployees.reduce(
     (sum, employee) =>
-      sum + bulkDaysInRange.filter((date) => isEmployeeActiveOn(employee, date)).length,
-    0,
+      sum +
+      bulkDaysInRange.filter((date) => isEmployeeActiveOn(employee, date))
+        .length,
+    0
   );
 
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 ${visible ? "opacity-100" : "opacity-0"}`}
+        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 ${
+          visible ? "opacity-100" : "opacity-0"
+        }`}
         style={{ height: "100vh" }}
         aria-hidden="true"
         onClick={onClose}
@@ -122,7 +126,9 @@ export function AttendanceEntryDrawer(props: Props) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="add-attendance-title"
-          className={`h-full w-screen max-w-xl bg-white shadow-2xl pointer-events-auto flex flex-col transition-transform duration-200 ease-out ${visible ? "translate-x-0" : "translate-x-full"}`}
+          className={`h-full w-screen max-w-xl bg-white shadow-2xl pointer-events-auto flex flex-col transition-transform duration-200 ease-out ${
+            visible ? "translate-x-0" : "translate-x-full"
+          }`}
         >
           <div className="flex shrink-0 items-start justify-between border-b border-gray-100 px-6 py-5">
             <div>
@@ -151,14 +157,22 @@ export function AttendanceEntryDrawer(props: Props) {
             <button
               type="button"
               onClick={() => setMode("employees")}
-              className={`rounded-t-lg px-4 py-2 text-sm font-medium transition ${mode === "employees" ? "border-b-2 border-brand-orange text-brand-orange" : "text-gray-500 hover:text-gray-700"}`}
+              className={`rounded-t-lg px-4 py-2 text-sm font-medium transition ${
+                mode === "employees"
+                  ? "border-b-2 border-brand-orange text-brand-orange"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
             >
               Multiple Employees
             </button>
             <button
               type="button"
               onClick={() => setMode("days")}
-              className={`rounded-t-lg px-4 py-2 text-sm font-medium transition ${mode === "days" ? "border-b-2 border-brand-orange text-brand-orange" : "text-gray-500 hover:text-gray-700"}`}
+              className={`rounded-t-lg px-4 py-2 text-sm font-medium transition ${
+                mode === "days"
+                  ? "border-b-2 border-brand-orange text-brand-orange"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
             >
               Multiple Days
             </button>
@@ -195,7 +209,9 @@ export function AttendanceEntryDrawer(props: Props) {
                       <span className="truncate">
                         {selectedEmployeeIds.length === 0
                           ? "Select employees"
-                          : `${selectedEmployeeIds.length} employee${selectedEmployeeIds.length === 1 ? "" : "s"} selected`}
+                          : `${selectedEmployeeIds.length} employee${
+                              selectedEmployeeIds.length === 1 ? "" : "s"
+                            } selected`}
                       </span>
                       <span className="ml-3 text-gray-400" aria-hidden="true">
                         {employeeMenuOpen ? "▴" : "▾"}
@@ -214,8 +230,8 @@ export function AttendanceEntryDrawer(props: Props) {
                               current.length === eligibleEmployees.length
                                 ? []
                                 : eligibleEmployees.map(
-                                    (employee) => employee._id,
-                                  ),
+                                    (employee) => employee._id
+                                  )
                             )
                           }
                           className="mb-1 w-full rounded-md px-3 py-2 text-left text-xs font-medium text-brand-teal hover:bg-brand-sand"
@@ -232,7 +248,7 @@ export function AttendanceEntryDrawer(props: Props) {
                         )}
                         {eligibleEmployees.map((employee) => {
                           const selected = selectedEmployeeIds.includes(
-                            employee._id,
+                            employee._id
                           );
                           return (
                             <button
@@ -244,15 +260,19 @@ export function AttendanceEntryDrawer(props: Props) {
                                 setSelectedEmployeeIds((current) =>
                                   selected
                                     ? current.filter(
-                                        (id) => id !== employee._id,
+                                        (id) => id !== employee._id
                                       )
-                                    : [...current, employee._id],
+                                    : [...current, employee._id]
                                 )
                               }
                               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-50"
                             >
                               <span
-                                className={`flex h-4 w-4 items-center justify-center rounded border text-xs ${selected ? "border-brand-orange bg-brand-orange text-white" : "border-gray-300 bg-white"}`}
+                                className={`flex h-4 w-4 items-center justify-center rounded border text-xs ${
+                                  selected
+                                    ? "border-brand-orange bg-brand-orange text-white"
+                                    : "border-gray-300 bg-white"
+                                }`}
                                 aria-hidden="true"
                               >
                                 {selected ? "✓" : ""}
@@ -291,7 +311,9 @@ export function AttendanceEntryDrawer(props: Props) {
                       <span className="truncate">
                         {bulkEmployeeIds.length === 0
                           ? "Select employees"
-                          : `${bulkEmployeeIds.length} employee${bulkEmployeeIds.length === 1 ? "" : "s"} selected`}
+                          : `${bulkEmployeeIds.length} employee${
+                              bulkEmployeeIds.length === 1 ? "" : "s"
+                            } selected`}
                       </span>
                       <span className="ml-3 text-gray-400" aria-hidden="true">
                         {bulkEmployeeMenuOpen ? "▴" : "▾"}
@@ -310,8 +332,8 @@ export function AttendanceEntryDrawer(props: Props) {
                               current.length === activeEmployeesForDays.length
                                 ? []
                                 : activeEmployeesForDays.map(
-                                    (employee) => employee._id,
-                                  ),
+                                    (employee) => employee._id
+                                  )
                             )
                           }
                           className="mb-1 w-full rounded-md px-3 py-2 text-left text-xs font-medium text-brand-teal hover:bg-brand-sand"
@@ -328,7 +350,7 @@ export function AttendanceEntryDrawer(props: Props) {
                         )}
                         {activeEmployeesForDays.map((employee) => {
                           const selected = bulkEmployeeIds.includes(
-                            employee._id,
+                            employee._id
                           );
                           return (
                             <button
@@ -340,15 +362,19 @@ export function AttendanceEntryDrawer(props: Props) {
                                 setBulkEmployeeIds((current) =>
                                   selected
                                     ? current.filter(
-                                        (id) => id !== employee._id,
+                                        (id) => id !== employee._id
                                       )
-                                    : [...current, employee._id],
+                                    : [...current, employee._id]
                                 )
                               }
                               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-50"
                             >
                               <span
-                                className={`flex h-4 w-4 items-center justify-center rounded border text-xs ${selected ? "border-brand-orange bg-brand-orange text-white" : "border-gray-300 bg-white"}`}
+                                className={`flex h-4 w-4 items-center justify-center rounded border text-xs ${
+                                  selected
+                                    ? "border-brand-orange bg-brand-orange text-white"
+                                    : "border-gray-300 bg-white"
+                                }`}
                                 aria-hidden="true"
                               >
                                 {selected ? "✓" : ""}
@@ -385,18 +411,26 @@ export function AttendanceEntryDrawer(props: Props) {
                     />
                   </label>
                 </div>
-                <p className={`text-xs ${bulkFromDate > bulkToDate ? "font-medium text-red-600" : "text-gray-500"}`}>
+                <p
+                  className={`text-xs ${
+                    bulkFromDate > bulkToDate
+                      ? "font-medium text-red-600"
+                      : "text-gray-500"
+                  }`}
+                >
                   {bulkFromDate > bulkToDate ? (
-                    "The \"To\" date must be on or after the \"From\" date."
+                    'The "To" date must be on or after the "From" date.'
                   ) : (
                     <>
-                      {bulkTotalRecords} record{bulkTotalRecords === 1 ? "" : "s"}{" "}
-                      will be saved across {bulkDaysInRange.length} day
+                      {bulkTotalRecords} record
+                      {bulkTotalRecords === 1 ? "" : "s"} will be saved across{" "}
+                      {bulkDaysInRange.length} day
                       {bulkDaysInRange.length === 1 ? "" : "s"} and{" "}
                       {bulkSelectedEmployees.length} employee
                       {bulkSelectedEmployees.length === 1 ? "" : "s"}
                       {bulkSelectedEmployees.length > 0 &&
-                      bulkTotalRecords < bulkDaysInRange.length * bulkSelectedEmployees.length
+                      bulkTotalRecords <
+                        bulkDaysInRange.length * bulkSelectedEmployees.length
                         ? " (some employees weren't active on every day)."
                         : "."}
                     </>
@@ -414,7 +448,11 @@ export function AttendanceEntryDrawer(props: Props) {
                     key={status}
                     type="button"
                     onClick={() => setBulkStatus(status)}
-                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${bulkStatus === status ? statusStyle[status] : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"}`}
+                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                      bulkStatus === status
+                        ? statusStyle[status]
+                        : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"
+                    }`}
                     aria-pressed={bulkStatus === status}
                   >
                     {status}

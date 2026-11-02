@@ -35,7 +35,7 @@ interface AuditEntry {
 
 export function auditLog(
   action: AuditAction,
-  details: Omit<AuditEntry, "timestamp" | "action">,
+  details: Omit<AuditEntry, "timestamp" | "action">
 ): void {
   const entry: AuditEntry = {
     timestamp: new Date().toISOString(),

@@ -38,10 +38,13 @@ const AttendanceSchema: Schema<IAttendance> = new Schema(
       required: true,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-AttendanceSchema.index({ franchise: 1, date: 1, employee: 1 }, { unique: true });
+AttendanceSchema.index(
+  { franchise: 1, date: 1, employee: 1 },
+  { unique: true }
+);
 
 const Attendance: Model<IAttendance> =
   mongoose.models.Attendance ??

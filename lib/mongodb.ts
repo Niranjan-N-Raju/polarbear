@@ -5,12 +5,12 @@ const MONGODB_DB = process.env.MONGODB_DB as string;
 
 if (!MONGODB_URI) {
   throw new Error(
-    "Please define the MONGODB_URI environment variable in .env.local",
+    "Please define the MONGODB_URI environment variable in .env.local"
   );
 }
 if (!MONGODB_DB) {
   throw new Error(
-    "Please define the MONGODB_DB environment variable in .env.local",
+    "Please define the MONGODB_DB environment variable in .env.local"
   );
 }
 

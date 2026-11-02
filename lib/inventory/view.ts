@@ -2,8 +2,9 @@ import { localDateValue } from "@/lib/date-utils";
 
 export function daysUntil(value: string): number {
   return Math.ceil(
-    (new Date(`${value}T00:00:00`).getTime() - new Date(`${localDateValue()}T00:00:00`).getTime()) /
-      86_400_000,
+    (new Date(`${value}T00:00:00`).getTime() -
+      new Date(`${localDateValue()}T00:00:00`).getTime()) /
+      86_400_000
   );
 }
 

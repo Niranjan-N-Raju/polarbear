@@ -21,7 +21,10 @@ export async function PATCH(request: NextRequest) {
 
   const storeId = new URL(request.url).searchParams.get("id");
   if (!storeId || !mongoose.isValidObjectId(storeId)) {
-    return NextResponse.json({ message: "A valid store id is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid store id is required." },
+      { status: 400 }
+    );
   }
 
   const jsonBody = await readJsonObject(request, 10_000);
@@ -29,25 +32,34 @@ export async function PATCH(request: NextRequest) {
   const rawBody = jsonBody.body;
   const parsed = storeArchiveBodySchema.safeParse(rawBody);
   if (!parsed.success) {
-    return NextResponse.json({ message: parsed.error.issues[0]?.message ?? "Invalid input." }, { status: 400 });
+    return NextResponse.json(
+      { message: parsed.error.issues[0]?.message ?? "Invalid input." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
-  const creatorId = mongoose.isValidObjectId(auth.id) ? new mongoose.Types.ObjectId(auth.id) : auth.id;
+  const creatorId = mongoose.isValidObjectId(auth.id)
+    ? new mongoose.Types.ObjectId(auth.id)
+    : auth.id;
   const update = parsed.data.archived
     ? { $set: { isActive: false, archivedAt: new Date() } }
     : { $set: { isActive: true }, $unset: { archivedAt: 1 } };
   const franchise = await Franchise.findOneAndUpdate(
     { _id: storeId, createdBy: creatorId },
     update,
-    { new: true, runValidators: true },
+    { new: true, runValidators: true }
   ).lean();
 
   if (!franchise) {
     const exists = await Franchise.exists({ _id: storeId });
     return NextResponse.json(
-      { message: exists ? "You can only archive stores you created." : "Store not found." },
-      { status: exists ? 403 : 404 },
+      {
+        message: exists
+          ? "You can only archive stores you created."
+          : "Store not found.",
+      },
+      { status: exists ? 403 : 404 }
     );
   }
 
@@ -59,7 +71,9 @@ export async function PATCH(request: NextRequest) {
   });
 
   return NextResponse.json({
-    message: parsed.data.archived ? "Store archived successfully." : "Store restored successfully.",
+    message: parsed.data.archived
+      ? "Store archived successfully."
+      : "Store restored successfully.",
     franchise,
   });
 }

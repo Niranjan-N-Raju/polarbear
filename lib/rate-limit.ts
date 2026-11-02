@@ -49,7 +49,7 @@ export interface RateLimitResult {
 
 export function checkRateLimit(
   key: string,
-  config?: RateLimitConfig,
+  config?: RateLimitConfig
 ): RateLimitResult {
   const windowMs = config?.windowMs ?? DEFAULT_WINDOW_MS;
   const maxAttempts = config?.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
@@ -105,11 +105,31 @@ export function getClientIp(request: NextRequest): string {
 
 /** Pre-configured rate limits for different operations */
 export const RATE_LIMITS = {
-  login: { windowMs: 15 * 60 * 1000, maxAttempts: 5, lockoutMs: 15 * 60 * 1000 },
-  userCreate: { windowMs: 60 * 60 * 1000, maxAttempts: 20, lockoutMs: 30 * 60 * 1000 },
-  storeCreate: { windowMs: 60 * 60 * 1000, maxAttempts: 10, lockoutMs: 30 * 60 * 1000 },
-  passwordChange: { windowMs: 15 * 60 * 1000, maxAttempts: 5, lockoutMs: 30 * 60 * 1000 },
-  sessionExtend: { windowMs: 5 * 60 * 1000, maxAttempts: 10, lockoutMs: 5 * 60 * 1000 },
+  login: {
+    windowMs: 15 * 60 * 1000,
+    maxAttempts: 5,
+    lockoutMs: 15 * 60 * 1000,
+  },
+  userCreate: {
+    windowMs: 60 * 60 * 1000,
+    maxAttempts: 20,
+    lockoutMs: 30 * 60 * 1000,
+  },
+  storeCreate: {
+    windowMs: 60 * 60 * 1000,
+    maxAttempts: 10,
+    lockoutMs: 30 * 60 * 1000,
+  },
+  passwordChange: {
+    windowMs: 15 * 60 * 1000,
+    maxAttempts: 5,
+    lockoutMs: 30 * 60 * 1000,
+  },
+  sessionExtend: {
+    windowMs: 5 * 60 * 1000,
+    maxAttempts: 10,
+    lockoutMs: 5 * 60 * 1000,
+  },
 } as const;
 
 /** Per-account cap across all IPs; high enough that a remote attacker cannot cheaply lock out the owner. */
@@ -131,7 +151,10 @@ export function loginAccountRateKeys(email: string, ip: string) {
  * Account-level login throttling. The 5-per-15-min budget is scoped to (email, ip) so guesses
  * from other IPs cannot lock the owner out; a looser global cap still bounds distributed guessing.
  */
-export function checkLoginAccountRateLimit(email: string, ip: string): RateLimitResult {
+export function checkLoginAccountRateLimit(
+  email: string,
+  ip: string
+): RateLimitResult {
   const keys = loginAccountRateKeys(email, ip);
   const perIp = checkRateLimit(keys.perIp, RATE_LIMITS.login);
   if (!perIp.allowed) return perIp;

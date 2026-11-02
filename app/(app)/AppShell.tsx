@@ -30,7 +30,7 @@ export default function AppShell({
   const [sessionPromptOpen, setSessionPromptOpen] = useState(false);
   const [isExtendingSession, setIsExtendingSession] = useState(false);
   const [sessionPromptSecondsLeft, setSessionPromptSecondsLeft] = useState(
-    SESSION_PROMPT_DURATION_SECONDS,
+    SESSION_PROMPT_DURATION_SECONDS
   );
   const [sessionTimerVersion, setSessionTimerVersion] = useState(0);
   const [activeFranchiseId, setActiveFranchiseId] = useState(franchiseId);
@@ -39,18 +39,25 @@ export default function AppShell({
   // True while we're auto-checking/selecting on first load (no franchise cookie yet)
   // Global admins never need a store — skip entirely
   // Accounts that must change their password cannot use store APIs yet.
-  const needsStore = !mustChangePassword && userRole !== "admin" && userRole !== "sub_admin";
+  const needsStore =
+    !mustChangePassword && userRole !== "admin" && userRole !== "sub_admin";
   const [autoSelecting, setAutoSelecting] = useState(
-    !franchiseId && needsStore,
+    !franchiseId && needsStore
   );
   // How many stores this user can access (0 = loading/unknown)
   const [storeCount, setStoreCount] = useState(0);
   const loggingOutRef = useRef(false);
 
   useEffect(() => {
-    if (autoSelecting || globalThis.window.sessionStorage.getItem("em_login_success_toast") !== "1") return;
+    if (
+      autoSelecting ||
+      globalThis.window.sessionStorage.getItem("em_login_success_toast") !== "1"
+    )
+      return;
     globalThis.window.sessionStorage.removeItem("em_login_success_toast");
-    const frame = requestAnimationFrame(() => showSuccess("Signed in successfully."));
+    const frame = requestAnimationFrame(() =>
+      showSuccess("Signed in successfully.")
+    );
     return () => cancelAnimationFrame(frame);
   }, [autoSelecting, pathname, showSuccess]);
 
@@ -139,7 +146,13 @@ export default function AppShell({
       lastReset = now;
       setSessionTimerVersion((value) => value + 1);
     }
-    const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart"] as const;
+    const events = [
+      "mousedown",
+      "mousemove",
+      "keydown",
+      "scroll",
+      "touchstart",
+    ] as const;
     for (const eventName of events) {
       document.addEventListener(eventName, resetOnActivity, { passive: true });
     }
@@ -159,7 +172,7 @@ export default function AppShell({
       const returnTo = `${pathname}${globalThis.location.search}`;
       await logoutAndRedirectToLogin(router, returnTo, reason);
     },
-    [pathname, router],
+    [pathname, router]
   );
 
   useEffect(() => {
@@ -221,7 +234,7 @@ export default function AppShell({
       openStoreModal: () => setModalOpen(true),
       activeStoreId: activeFranchiseId || null,
     }),
-    [activeFranchiseId],
+    [activeFranchiseId]
   );
 
   return (

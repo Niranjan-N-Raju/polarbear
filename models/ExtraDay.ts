@@ -32,12 +32,13 @@ const ExtraDaySchema: Schema<IExtraDay> = new Schema(
       required: true,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 ExtraDaySchema.index({ franchise: 1, employee: 1, period: 1 });
 
 const ExtraDay: Model<IExtraDay> =
-  mongoose.models.ExtraDay ?? mongoose.model<IExtraDay>("ExtraDay", ExtraDaySchema);
+  mongoose.models.ExtraDay ??
+  mongoose.model<IExtraDay>("ExtraDay", ExtraDaySchema);
 
 export default ExtraDay;

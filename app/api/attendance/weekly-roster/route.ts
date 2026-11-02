@@ -11,27 +11,46 @@ import { datesBetween, isValidDate, localDateValue } from "@/lib/date-utils";
 import { isEmployeeActiveOn } from "@/lib/employee-status";
 
 function resolveShift(
-  day: { shift?: string; status?: string; startTime?: string; endTime?: string },
-  shifts: { id: string; name: string; startTime: string; endTime: string }[],
+  day: {
+    shift?: string;
+    status?: string;
+    startTime?: string;
+    endTime?: string;
+  },
+  shifts: { id: string; name: string; startTime: string; endTime: string }[]
 ): string {
   // Resolve old roster representations to the current configured shift IDs.
   if (day.shift === "leave" || day.status === "leave") return "leave";
   if (day.shift === "off" || day.status === "off") return "off";
   const saved = shifts.find((shift) => shift.id === day.shift);
   if (saved) return saved.id;
-  const legacy = shifts.find((shift) => shift.startTime === day.startTime && shift.endTime === day.endTime);
+  const legacy = shifts.find(
+    (shift) =>
+      shift.startTime === day.startTime && shift.endTime === day.endTime
+  );
   if (legacy) return legacy.id;
   const legacyLabel = day.shift?.toLowerCase();
-  const defaultTimes = legacyLabel === "night" ? ["17:00", "02:00"] : legacyLabel === "morning" ? ["09:00", "18:00"] : null;
+  const defaultTimes =
+    legacyLabel === "night"
+      ? ["17:00", "02:00"]
+      : legacyLabel === "morning"
+      ? ["09:00", "18:00"]
+      : null;
   return defaultTimes
-    ? shifts.find((shift) => shift.startTime === defaultTimes[0] && shift.endTime === defaultTimes[1])?.id ?? "off"
+    ? shifts.find(
+        (shift) =>
+          shift.startTime === defaultTimes[0] &&
+          shift.endTime === defaultTimes[1]
+      )?.id ?? "off"
     : "off";
 }
 
 function getWeekDates(weekStart: string): string[] {
   const [year, month, day] = weekStart.split("-").map(Number);
   const weekEnd = new Date(year, month - 1, day + 6);
-  const endValue = `${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, "0")}-${String(weekEnd.getDate()).padStart(2, "0")}`;
+  const endValue = `${weekEnd.getFullYear()}-${String(
+    weekEnd.getMonth() + 1
+  ).padStart(2, "0")}-${String(weekEnd.getDate()).padStart(2, "0")}`;
   return datesBetween(weekStart, endValue);
 }
 
@@ -59,7 +78,10 @@ type RosterToSerialize = {
   }>;
 };
 
-function serializeRoster(roster: RosterToSerialize, shifts: { id: string; name: string; startTime: string; endTime: string }[]) {
+function serializeRoster(
+  roster: RosterToSerialize,
+  shifts: { id: string; name: string; startTime: string; endTime: string }[]
+) {
   return {
     weekStart: roster.weekStart,
     entries: roster.entries.map((entry) => ({
@@ -70,7 +92,13 @@ function serializeRoster(roster: RosterToSerialize, shifts: { id: string; name: 
         return {
           date: day.date,
           shift: shiftId,
-          shiftName: shift?.name ?? (shiftId === "leave" ? "Leave" : shiftId === "off" ? "Off" : "Unconfigured shift"),
+          shiftName:
+            shift?.name ??
+            (shiftId === "leave"
+              ? "Leave"
+              : shiftId === "off"
+              ? "Off"
+              : "Unconfigured shift"),
           startTime: shift?.startTime ?? "",
           endTime: shift?.endTime ?? "",
         };
@@ -84,13 +112,19 @@ export async function GET(request: NextRequest) {
   if (authResult instanceof NextResponse) return authResult;
 
   const params = new URL(request.url).searchParams;
-  const franchiseId = await getAuthorizedStoreAdminId(authResult, params.get("franchiseId"));
+  const franchiseId = await getAuthorizedStoreAdminId(
+    authResult,
+    params.get("franchiseId")
+  );
   const weekStart = params.get("weekStart") ?? "";
   const from = params.get("from") ?? "";
   const to = params.get("to") ?? "";
   const hasRange = isValidDate(from) && isValidDate(to) && from <= to;
   if (!franchiseId || (!validWeekStart(weekStart) && !hasRange)) {
-    return NextResponse.json({ message: "A valid store and week start or date range are required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid store and week start or date range are required." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
@@ -104,14 +138,20 @@ export async function GET(request: NextRequest) {
     cursor = localDateValue(next);
   }
   const [rosters, store] = await Promise.all([
-    WeeklyRoster.find({ franchise: franchiseId, weekStart: { $in: weekStarts } }).sort({ weekStart: 1 }).lean(),
+    WeeklyRoster.find({
+      franchise: franchiseId,
+      weekStart: { $in: weekStarts },
+    })
+      .sort({ weekStart: 1 })
+      .lean(),
     Franchise.findById(franchiseId).select("shifts").lean(),
   ]);
   const shifts = store?.shifts ?? [];
   return NextResponse.json({
     shifts,
     rosters: rosters.map((roster) => serializeRoster(roster, shifts)),
-    roster: hasRange || !rosters[0] ? null : serializeRoster(rosters[0], shifts),
+    roster:
+      hasRange || !rosters[0] ? null : serializeRoster(rosters[0], shifts),
   });
 }
 
@@ -132,38 +172,82 @@ export async function PUT(request: NextRequest) {
   }>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
-  const franchiseId = await getAuthorizedStoreAdminId(authResult, body.franchiseId);
+  const franchiseId = await getAuthorizedStoreAdminId(
+    authResult,
+    body.franchiseId
+  );
   const weekStart = body.weekStart ?? "";
-  if (!franchiseId || !validWeekStart(weekStart) || !Array.isArray(body.entries) || body.entries.length > 500) {
-    return NextResponse.json({ message: "A valid store, Monday week start, and roster entries are required." }, { status: 400 });
+  if (
+    !franchiseId ||
+    !validWeekStart(weekStart) ||
+    !Array.isArray(body.entries) ||
+    body.entries.length > 500
+  ) {
+    return NextResponse.json(
+      {
+        message:
+          "A valid store, Monday week start, and roster entries are required.",
+      },
+      { status: 400 }
+    );
   }
 
   const weekDates = getWeekDates(weekStart);
   if (weekDates.length !== 7) {
-    return NextResponse.json({ message: "The roster week must contain seven days." }, { status: 400 });
+    return NextResponse.json(
+      { message: "The roster week must contain seven days." },
+      { status: 400 }
+    );
   }
   const employeeIds = body.entries.map((entry) => entry.employeeId ?? "");
-  if (employeeIds.some((id) => !mongoose.isValidObjectId(id)) || new Set(employeeIds).size !== employeeIds.length) {
-    return NextResponse.json({ message: "Each roster employee must be valid and listed once." }, { status: 400 });
+  if (
+    employeeIds.some((id) => !mongoose.isValidObjectId(id)) ||
+    new Set(employeeIds).size !== employeeIds.length
+  ) {
+    return NextResponse.json(
+      { message: "Each roster employee must be valid and listed once." },
+      { status: 400 }
+    );
   }
 
   for (const entry of body.entries) {
     if (!Array.isArray(entry.days) || entry.days.length !== 7) {
-      return NextResponse.json({ message: "Each employee must have one schedule for every day." }, { status: 400 });
+      return NextResponse.json(
+        { message: "Each employee must have one schedule for every day." },
+        { status: 400 }
+      );
     }
     const dates = entry.days.map((day) => day.date ?? "");
-    if (new Set(dates).size !== 7 || weekDates.some((date) => !dates.includes(date))) {
-      return NextResponse.json({ message: "Roster dates must match the selected week." }, { status: 400 });
+    if (
+      new Set(dates).size !== 7 ||
+      weekDates.some((date) => !dates.includes(date))
+    ) {
+      return NextResponse.json(
+        { message: "Roster dates must match the selected week." },
+        { status: 400 }
+      );
     }
   }
 
   await connectToDatabase();
   const store = await Franchise.findById(franchiseId).select("shifts").lean();
-  if (!store) return NextResponse.json({ message: "Store not found." }, { status: 404 });
+  if (!store)
+    return NextResponse.json({ message: "Store not found." }, { status: 404 });
   const validShiftIds = new Set((store.shifts ?? []).map((shift) => shift.id));
   for (const entry of body.entries) {
-    if (entry.days?.some((day) => !day.shift || (day.shift !== "off" && day.shift !== "leave" && !validShiftIds.has(day.shift)))) {
-      return NextResponse.json({ message: "Choose a configured shift, day off, or leave." }, { status: 400 });
+    if (
+      entry.days?.some(
+        (day) =>
+          !day.shift ||
+          (day.shift !== "off" &&
+            day.shift !== "leave" &&
+            !validShiftIds.has(day.shift))
+      )
+    ) {
+      return NextResponse.json(
+        { message: "Choose a configured shift, day off, or leave." },
+        { status: 400 }
+      );
     }
   }
   const employees = await User.find({
@@ -171,16 +255,38 @@ export async function PUT(request: NextRequest) {
     role: "employee",
     franchises: franchiseId,
     isActive: { $ne: false },
-  }).select("_id dateOfJoining isActive archivedAt").lean();
+  })
+    .select("_id dateOfJoining isActive archivedAt")
+    .lean();
   if (employees.length !== employeeIds.length) {
-    return NextResponse.json({ message: "Roster employees must be active employees assigned to this store." }, { status: 400 });
+    return NextResponse.json(
+      {
+        message:
+          "Roster employees must be active employees assigned to this store.",
+      },
+      { status: 400 }
+    );
   }
 
-  const employeeById = new Map(employees.map((employee) => [String(employee._id), employee]));
+  const employeeById = new Map(
+    employees.map((employee) => [String(employee._id), employee])
+  );
   for (const entry of body.entries) {
     const employee = employeeById.get(entry.employeeId ?? "");
-    if (employee && entry.days?.some((day) => day.shift !== "off" && !isEmployeeActiveOn(employee, day.date ?? ""))) {
-      return NextResponse.json({ message: "Cannot schedule an employee outside their active employment dates." }, { status: 400 });
+    if (
+      employee &&
+      entry.days?.some(
+        (day) =>
+          day.shift !== "off" && !isEmployeeActiveOn(employee, day.date ?? "")
+      )
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "Cannot schedule an employee outside their active employment dates.",
+        },
+        { status: 400 }
+      );
     }
   }
 
@@ -195,13 +301,16 @@ export async function PUT(request: NextRequest) {
     ? new mongoose.Types.ObjectId(authResult.id)
     : null;
   if (!createdBy) {
-    return NextResponse.json({ message: "A valid authenticated user is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid authenticated user is required." },
+      { status: 400 }
+    );
   }
 
   await WeeklyRoster.findOneAndUpdate(
     { franchise: franchiseId, weekStart },
     { $set: { entries }, $setOnInsert: { createdBy } },
-    { new: true, upsert: true, runValidators: true },
+    { new: true, upsert: true, runValidators: true }
   );
 
   return NextResponse.json({ message: "Weekly roster saved successfully." });

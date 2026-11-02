@@ -22,13 +22,13 @@ function getKey(): Buffer {
   const hex = process.env.FIELD_ENCRYPTION_KEY;
   if (!hex) {
     throw new Error(
-      "FIELD_ENCRYPTION_KEY is not set. Add a 64-character hex string to .env.local",
+      "FIELD_ENCRYPTION_KEY is not set. Add a 64-character hex string to .env.local"
     );
   }
   const key = Buffer.from(hex, "hex");
   if (key.length !== 32) {
     throw new Error(
-      "FIELD_ENCRYPTION_KEY must be a 64-character hex string (32 bytes).",
+      "FIELD_ENCRYPTION_KEY must be a 64-character hex string (32 bytes)."
     );
   }
   return key;
@@ -51,7 +51,9 @@ export function encrypt(plaintext: string): string {
   const tag = cipher.getAuthTag();
   return (
     ENCRYPTED_PREFIX +
-    `${iv.toString("base64url")}.${tag.toString("base64url")}.${ciphertext.toString("base64url")}`
+    `${iv.toString("base64url")}.${tag.toString(
+      "base64url"
+    )}.${ciphertext.toString("base64url")}`
   );
 }
 
@@ -100,14 +102,16 @@ export const ENCRYPTED_USER_FIELDS = [
 ] as const;
 
 /** Decrypts any ENCRYPTED_USER_FIELDS present on a plain user object (e.g. from .lean()). */
-export function decryptUserFields<T extends Record<string, unknown>>(user: T): T {
+export function decryptUserFields<T extends Record<string, unknown>>(
+  user: T
+): T {
   for (const field of ENCRYPTED_USER_FIELDS) {
     const value = user[field];
-    if (typeof value === "string") (user as Record<string, unknown>)[field] = decrypt(value);
+    if (typeof value === "string")
+      (user as Record<string, unknown>)[field] = decrypt(value);
   }
   return user;
 }
-
 
 /**
  * Encrypt a field value if FIELD_ENCRYPTION_KEY is configured.
@@ -121,7 +125,7 @@ export function encryptField(value: string | undefined): string | undefined {
   if (!process.env.FIELD_ENCRYPTION_KEY) {
     throw new Error(
       "[SECURITY] FIELD_ENCRYPTION_KEY is required to avoid plaintext PII storage. " +
-        "Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+        "Generate one with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\""
     );
   }
   return encrypt(value);

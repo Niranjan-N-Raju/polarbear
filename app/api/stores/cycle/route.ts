@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import Franchise from "@/models/Franchise";
 import { connectToDatabase } from "@/lib/mongodb";
 import { getAuthorizedStoreAdminId, requireAuth } from "@/lib/api-auth";
-import { isValidPeriod, getCycleRange, resolveCycleSettings } from "@/lib/salary-cycle";
+import {
+  isValidPeriod,
+  getCycleRange,
+  resolveCycleSettings,
+} from "@/lib/salary-cycle";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
@@ -12,7 +16,10 @@ export async function GET(request: NextRequest) {
   const franchiseId = params.get("franchiseId") ?? "";
   const period = params.get("period") ?? "";
   if (!isValidPeriod(period)) {
-    return NextResponse.json({ message: "A valid period is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid period is required." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
@@ -21,9 +28,12 @@ export async function GET(request: NextRequest) {
   }
 
   const store = await Franchise.findById(franchiseId)
-    .select("salaryCycleType salaryCycleStartDay salaryCycleEndDay salaryCycleConfiguredAt")
+    .select(
+      "salaryCycleType salaryCycleStartDay salaryCycleEndDay salaryCycleConfiguredAt"
+    )
     .lean();
-  if (!store) return NextResponse.json({ message: "Store not found." }, { status: 404 });
+  if (!store)
+    return NextResponse.json({ message: "Store not found." }, { status: 404 });
 
   const { cycleType, startDay, endDay } = resolveCycleSettings(store);
   const range = getCycleRange(period, cycleType, startDay);

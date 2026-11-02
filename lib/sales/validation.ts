@@ -13,15 +13,29 @@ export interface ValidatedSale {
 }
 
 function isFiniteNonNegative(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0 && hasAtMostTwoDecimals(value);
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    hasAtMostTwoDecimals(value)
+  );
 }
 
-export function validateSalePayload(body: SalePayload): { value: ValidatedSale } | { error: string } {
+export function validateSalePayload(
+  body: SalePayload
+): { value: ValidatedSale } | { error: string } {
   const dateError = validateRecordDate(body.date);
   if (dateError) return { error: dateError };
 
-  for (const field of ["totalSale", "swiggy", "zomato", "upi", "upiCharge"] as const) {
-    if (!isFiniteNonNegative(body[field])) return { error: `A valid ${field} is required.` };
+  for (const field of [
+    "totalSale",
+    "swiggy",
+    "zomato",
+    "upi",
+    "upiCharge",
+  ] as const) {
+    if (!isFiniteNonNegative(body[field]))
+      return { error: `A valid ${field} is required.` };
   }
   if (!Array.isArray(body.expenses)) {
     return { error: "Expenses must be a list." };

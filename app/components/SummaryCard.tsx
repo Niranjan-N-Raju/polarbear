@@ -5,10 +5,25 @@ import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 
 export type SummaryCardColor = "teal" | "orange" | "yellow";
 
-const COLOR_CLASSES: Record<SummaryCardColor, { text: string; border: string; hex: string }> = {
-  teal: { text: "text-brand-teal", border: "border-brand-teal", hex: "#00a2c0" },
-  orange: { text: "text-brand-orange", border: "border-brand-orange", hex: "#f47521" },
-  yellow: { text: "text-brand-yellow", border: "border-brand-yellow", hex: "#ffd44f" },
+const COLOR_CLASSES: Record<
+  SummaryCardColor,
+  { text: string; border: string; hex: string }
+> = {
+  teal: {
+    text: "text-brand-teal",
+    border: "border-brand-teal",
+    hex: "#00a2c0",
+  },
+  orange: {
+    text: "text-brand-orange",
+    border: "border-brand-orange",
+    hex: "#f47521",
+  },
+  yellow: {
+    text: "text-brand-yellow",
+    border: "border-brand-yellow",
+    hex: "#ffd44f",
+  },
 };
 
 export interface SummaryCardProps {
@@ -40,7 +55,9 @@ export function SummaryCard({
       // Inline style guarantees the top border wins over the all-sides border-gray-200 utility.
       style={{ borderTopWidth: "3px", borderTopColor: hex }}
       className={`relative w-full rounded-xl border border-gray-200 bg-white p-3 text-left sm:p-4 ${
-        highlight ? "inventory-urgent-blink motion-reduce:animate-none ring-2 ring-brand-yellow" : ""
+        highlight
+          ? "inventory-urgent-blink motion-reduce:animate-none ring-2 ring-brand-yellow"
+          : ""
       }`}
     >
       <span
@@ -48,9 +65,15 @@ export function SummaryCard({
       >
         <FontAwesomeIcon icon={icon} />
       </span>
-      <p className="pr-9 text-[11px] font-bold uppercase tracking-[0.1em] text-gray-500 sm:pr-0 sm:text-xs">{label}</p>
-      <p className={`mt-2 text-lg font-bold ${text} sm:mt-3 sm:text-2xl`}>{value}</p>
-      {subtitle && <p className="mt-2 text-xs text-gray-500 sm:mt-3">{subtitle}</p>}
+      <p className="pr-9 text-[11px] font-bold uppercase tracking-[0.1em] text-gray-500 sm:pr-0 sm:text-xs">
+        {label}
+      </p>
+      <p className={`mt-2 text-lg font-bold ${text} sm:mt-3 sm:text-2xl`}>
+        {value}
+      </p>
+      {subtitle && (
+        <p className="mt-2 text-xs text-gray-500 sm:mt-3">{subtitle}</p>
+      )}
     </Wrapper>
   );
 }

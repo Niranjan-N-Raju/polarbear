@@ -141,7 +141,8 @@ function isGroupActive(group: NavGroup, pathname: string) {
 
 function activeGroupKey(pathname: string) {
   for (const [index, group] of navGroups.entries()) {
-    if (group.label && isGroupActive(group, pathname)) return groupKey(group, index);
+    if (group.label && isGroupActive(group, pathname))
+      return groupKey(group, index);
   }
   return null;
 }
@@ -151,13 +152,22 @@ function NavLinkItem({
   collapsed,
   isActive,
   indent,
-}: Readonly<{ item: NavItem; collapsed: boolean; isActive: boolean; indent?: boolean }>) {
+}: Readonly<{
+  item: NavItem;
+  collapsed: boolean;
+  isActive: boolean;
+  indent?: boolean;
+}>) {
   return (
     <Link
       href={item.href}
       title={collapsed ? item.label : undefined}
       className={`flex items-center gap-3 rounded-xl text-sm font-medium transition ${
-        collapsed ? "justify-center px-3 py-3" : indent ? "py-2.5 pl-9 pr-3" : "px-3 py-3"
+        collapsed
+          ? "justify-center px-3 py-3"
+          : indent
+          ? "py-2.5 pl-9 pr-3"
+          : "px-3 py-3"
       } ${
         isActive
           ? "border border-brand-teal/15 bg-brand-teal/10 text-brand-teal shadow-sm"
@@ -192,7 +202,12 @@ function NavGroupSection({
     return (
       <div className="space-y-1.5">
         {visible.map((item) => (
-          <NavLinkItem key={item.href} item={item} collapsed={collapsed} isActive={pathname === item.href} />
+          <NavLinkItem
+            key={item.href}
+            item={item}
+            collapsed={collapsed}
+            isActive={pathname === item.href}
+          />
         ))}
       </div>
     );
@@ -203,7 +218,12 @@ function NavGroupSection({
     return (
       <div className="space-y-1.5">
         {visible.map((item) => (
-          <NavLinkItem key={item.href} item={item} collapsed={collapsed} isActive={pathname === item.href} />
+          <NavLinkItem
+            key={item.href}
+            item={item}
+            collapsed={collapsed}
+            isActive={pathname === item.href}
+          />
         ))}
       </div>
     );
@@ -219,13 +239,27 @@ function NavGroupSection({
       >
         {group.icon}
         <span className="flex-1 truncate text-left">{group.label}</span>
-        <ChevronRightIcon className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${open ? "rotate-90" : ""}`} />
+        <ChevronRightIcon
+          className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
+            open ? "rotate-90" : ""
+          }`}
+        />
       </button>
-      <div className={`grid transition-[grid-template-rows] duration-200 ease-out ${open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
+      <div
+        className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+      >
         <div className="overflow-hidden">
           <div className="space-y-1.5 pt-1.5">
             {visible.map((item) => (
-              <NavLinkItem key={item.href} item={item} collapsed={collapsed} isActive={pathname === item.href} indent />
+              <NavLinkItem
+                key={item.href}
+                item={item}
+                collapsed={collapsed}
+                isActive={pathname === item.href}
+                indent
+              />
             ))}
           </div>
         </div>
@@ -235,8 +269,14 @@ function NavGroupSection({
 }
 
 function useExpandedGroups(pathname: string) {
-  const [manualOpen, setManualOpen] = useState<{ pathname: string; key: string | null } | null>(null);
-  const openKey = manualOpen?.pathname === pathname ? manualOpen.key : activeGroupKey(pathname);
+  const [manualOpen, setManualOpen] = useState<{
+    pathname: string;
+    key: string | null;
+  } | null>(null);
+  const openKey =
+    manualOpen?.pathname === pathname
+      ? manualOpen.key
+      : activeGroupKey(pathname);
 
   function toggle(key: string) {
     setManualOpen({ pathname, key: openKey === key ? null : key });
@@ -439,7 +479,9 @@ export default function Sidebar({
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center min-w-0">
-            <span className="text-base font-bold text-brand-orange">Polar Bear</span>
+            <span className="text-base font-bold text-brand-orange">
+              Polar Bear
+            </span>
             {franchiseName && (
               <span className="ml-2 text-xs text-gray-500 truncate hidden sm:inline">
                 — {franchiseName}
@@ -469,8 +511,12 @@ export default function Sidebar({
       >
         <div className="flex items-center justify-between border-b border-brand-sand h-14 px-4 shrink-0">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-teal text-[10px] font-black text-white">PB</span>
-            <span className="text-sm font-semibold text-gray-800">Polar Bear</span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-teal text-[10px] font-black text-white">
+              PB
+            </span>
+            <span className="text-sm font-semibold text-gray-800">
+              Polar Bear
+            </span>
           </div>
           <button
             onClick={() => setMobileOpen(false)}
@@ -484,7 +530,9 @@ export default function Sidebar({
         <div className="shrink-0">
           <div className="border-t border-brand-sand px-2 py-2">
             <ProfileLink pathname={pathname} />
-            {userRole === "franchise_admin" && <StoreConfigLink pathname={pathname} />}
+            {userRole === "franchise_admin" && (
+              <StoreConfigLink pathname={pathname} />
+            )}
           </div>
           {showSwitchStore && (
             <FranchiseBadge
@@ -518,8 +566,12 @@ export default function Sidebar({
           {!collapsed && (
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-teal text-[10px] font-black text-white">PB</span>
-                <span className="block text-sm font-semibold text-gray-800 truncate">Polar Bear</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-teal text-[10px] font-black text-white">
+                  PB
+                </span>
+                <span className="block text-sm font-semibold text-gray-800 truncate">
+                  Polar Bear
+                </span>
               </div>
               {userName && (
                 <span className="block text-[11px] text-gray-500 truncate">

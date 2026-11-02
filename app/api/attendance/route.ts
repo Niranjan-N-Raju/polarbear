@@ -18,14 +18,21 @@ export async function GET(request: NextRequest) {
   const auth = authResult;
 
   const params = new URL(request.url).searchParams;
-  const franchiseId = await getAuthorizedStoreAdminId(auth, params.get("franchiseId"));
+  const franchiseId = await getAuthorizedStoreAdminId(
+    auth,
+    params.get("franchiseId")
+  );
   const date = params.get("date");
   const from = params.get("from");
   const to = params.get("to");
   const hasDate = !!date && DATE_PATTERN.test(date);
-  const hasRange = !!from && !!to && DATE_PATTERN.test(from) && DATE_PATTERN.test(to);
+  const hasRange =
+    !!from && !!to && DATE_PATTERN.test(from) && DATE_PATTERN.test(to);
   if (!franchiseId || (!hasDate && !hasRange)) {
-    return NextResponse.json({ message: "A valid store and date range are required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid store and date range are required." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
@@ -51,15 +58,19 @@ export async function GET(request: NextRequest) {
                   franchise: franchiseObjectId,
                   employee: entry.employee,
                   date: day.date,
-                  status: (day.shift === "leave" ? "Absent" : day.shift === "off" ? "Week Off" : "Present") as AttendanceStatus,
+                  status: (day.shift === "leave"
+                    ? "Absent"
+                    : day.shift === "off"
+                    ? "Week Off"
+                    : "Present") as AttendanceStatus,
                   comment: "",
                   createdBy: roster.createdBy,
                 },
               },
               upsert: true,
             },
-          })),
-      ),
+          }))
+      )
     );
     // Roster defaults fill missing attendance only; existing admin corrections win.
     if (defaults.length > 0) await Attendance.bulkWrite(defaults);
@@ -93,23 +104,50 @@ export async function PUT(request: NextRequest) {
   }>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
-  const franchiseId = await getAuthorizedStoreAdminId(auth, body.franchiseId ?? null);
-  if (!franchiseId || !body.date || !DATE_PATTERN.test(body.date) || !Array.isArray(body.records)) {
-    return NextResponse.json({ message: "A valid store, date, and records are required." }, { status: 400 });
+  const franchiseId = await getAuthorizedStoreAdminId(
+    auth,
+    body.franchiseId ?? null
+  );
+  if (
+    !franchiseId ||
+    !body.date ||
+    !DATE_PATTERN.test(body.date) ||
+    !Array.isArray(body.records)
+  ) {
+    return NextResponse.json(
+      { message: "A valid store, date, and records are required." },
+      { status: 400 }
+    );
   }
   if (body.records.length > 500) {
-    return NextResponse.json({ message: "Too many attendance records." }, { status: 400 });
+    return NextResponse.json(
+      { message: "Too many attendance records." },
+      { status: 400 }
+    );
   }
 
   const employeeIds = body.records.map((record) => record.employeeId ?? "");
   if (employeeIds.some((id) => !mongoose.isValidObjectId(id))) {
-    return NextResponse.json({ message: "Each employee must be valid." }, { status: 400 });
+    return NextResponse.json(
+      { message: "Each employee must be valid." },
+      { status: 400 }
+    );
   }
   if (new Set(employeeIds).size !== employeeIds.length) {
-    return NextResponse.json({ message: "Each employee can only be marked once per date." }, { status: 400 });
+    return NextResponse.json(
+      { message: "Each employee can only be marked once per date." },
+      { status: 400 }
+    );
   }
-  if (body.records.some((record) => !STATUSES.has(record.status as AttendanceStatus))) {
-    return NextResponse.json({ message: "Each attendance status must be valid." }, { status: 400 });
+  if (
+    body.records.some(
+      (record) => !STATUSES.has(record.status as AttendanceStatus)
+    )
+  ) {
+    return NextResponse.json(
+      { message: "Each attendance status must be valid." },
+      { status: 400 }
+    );
   }
 
   const validRecords = body.records as Array<{
@@ -124,22 +162,31 @@ export async function PUT(request: NextRequest) {
     _id: { $in: employeeIds },
     role: "employee",
     franchises: franchiseId,
-  }).select("_id dateOfJoining archivedAt isActive").lean();
+  })
+    .select("_id dateOfJoining archivedAt isActive")
+    .lean();
   // Historical attendance may be entered later, so validate employment against
   // the requested attendance date rather than the current date.
   const validEmployeeIds = new Set(
     employees
       .filter((employee) => isEmployeeActiveOn(employee, attendanceDate))
-      .map((employee) => String(employee._id)),
+      .map((employee) => String(employee._id))
   );
-  const skippedCount = employeeIds.filter((id) => !validEmployeeIds.has(id)).length;
-  const recordsToSave = validRecords.filter((record) => validEmployeeIds.has(record.employeeId));
+  const skippedCount = employeeIds.filter(
+    (id) => !validEmployeeIds.has(id)
+  ).length;
+  const recordsToSave = validRecords.filter((record) =>
+    validEmployeeIds.has(record.employeeId)
+  );
 
   const actorId = mongoose.isValidObjectId(auth.id)
     ? new mongoose.Types.ObjectId(auth.id)
     : null;
   if (!actorId) {
-    return NextResponse.json({ message: "A valid authenticated user is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid authenticated user is required." },
+      { status: 400 }
+    );
   }
   const franchiseObjectId = new mongoose.Types.ObjectId(franchiseId);
 
@@ -181,11 +228,23 @@ export async function DELETE(request: NextRequest) {
   const auth = authResult;
 
   const params = new URL(request.url).searchParams;
-  const franchiseId = await getAuthorizedStoreAdminId(auth, params.get("franchiseId"));
+  const franchiseId = await getAuthorizedStoreAdminId(
+    auth,
+    params.get("franchiseId")
+  );
   const date = params.get("date");
   const employeeId = params.get("employeeId");
-  if (!franchiseId || !date || !DATE_PATTERN.test(date) || !employeeId || !mongoose.isValidObjectId(employeeId)) {
-    return NextResponse.json({ message: "A valid store, date, and employee are required." }, { status: 400 });
+  if (
+    !franchiseId ||
+    !date ||
+    !DATE_PATTERN.test(date) ||
+    !employeeId ||
+    !mongoose.isValidObjectId(employeeId)
+  ) {
+    return NextResponse.json(
+      { message: "A valid store, date, and employee are required." },
+      { status: 400 }
+    );
   }
 
   await connectToDatabase();
@@ -195,7 +254,10 @@ export async function DELETE(request: NextRequest) {
     date,
   }).lean();
   if (!deleted) {
-    return NextResponse.json({ message: "Attendance record not found." }, { status: 404 });
+    return NextResponse.json(
+      { message: "Attendance record not found." },
+      { status: 404 }
+    );
   }
 
   return NextResponse.json({ message: "Attendance record removed." });

@@ -34,7 +34,14 @@ export interface IUser extends Document {
   panNumber?: string;
   salary?: number;
   salaryBaseline?: number;
-  salaryRevisions?: { effectiveFrom: string; salary: number; position?: string; storeId: mongoose.Types.ObjectId; createdBy: mongoose.Types.ObjectId; createdAt: Date }[];
+  salaryRevisions?: {
+    effectiveFrom: string;
+    salary: number;
+    position?: string;
+    storeId: mongoose.Types.ObjectId;
+    createdBy: mongoose.Types.ObjectId;
+    createdAt: Date;
+  }[];
   bankAccountNumber?: string;
   bankName?: string;
   bankIfsc?: string;
@@ -93,14 +100,34 @@ const UserSchema: Schema<IUser> = new Schema(
     panNumber: { type: String, trim: true },
     salary: { type: Number, min: 0 },
     salaryBaseline: { type: Number, min: 0 },
-    salaryRevisions: { type: [new Schema({
-      effectiveFrom: { type: String, required: true, match: /^\d{4}-\d{2}-\d{2}$/ },
-      salary: { type: Number, required: true, min: 0 },
-      position: { type: String, trim: true, maxlength: 100 },
-      storeId: { type: Schema.Types.ObjectId, ref: 'Franchise', required: true },
-      createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-      createdAt: { type: Date, default: () => new Date() },
-    }, { _id: false })], default: [] },
+    salaryRevisions: {
+      type: [
+        new Schema(
+          {
+            effectiveFrom: {
+              type: String,
+              required: true,
+              match: /^\d{4}-\d{2}-\d{2}$/,
+            },
+            salary: { type: Number, required: true, min: 0 },
+            position: { type: String, trim: true, maxlength: 100 },
+            storeId: {
+              type: Schema.Types.ObjectId,
+              ref: "Franchise",
+              required: true,
+            },
+            createdBy: {
+              type: Schema.Types.ObjectId,
+              ref: "User",
+              required: true,
+            },
+            createdAt: { type: Date, default: () => new Date() },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+    },
     bankAccountNumber: { type: String, trim: true },
     bankName: { type: String, trim: true },
     bankIfsc: { type: String, trim: true },
@@ -113,7 +140,7 @@ const UserSchema: Schema<IUser> = new Schema(
           contentType: { type: String, required: true },
           size: { type: Number, required: true },
         },
-        { _id: false },
+        { _id: false }
       ),
     },
     panDocument: {
@@ -124,16 +151,22 @@ const UserSchema: Schema<IUser> = new Schema(
           contentType: { type: String, required: true },
           size: { type: Number, required: true },
         },
-        { _id: false },
+        { _id: false }
       ),
     },
     dateOfJoining: { type: Date },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 // Database indexes for query performance
-UserSchema.index({ employeeCode: 1 }, { unique: true, partialFilterExpression: { employeeCode: { $type: "string" } } });
+UserSchema.index(
+  { employeeCode: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { employeeCode: { $type: "string" } },
+  }
+);
 UserSchema.index({ franchises: 1 });
 UserSchema.index({ createdBy: 1 });
 UserSchema.index({ role: 1 });
@@ -158,7 +191,8 @@ const SENSITIVE_FIELDS = [
 ] as const;
 
 UserSchema.pre("save", async function assignEmployeeCode() {
-  if (this.isNew && this.role === "employee" && !this.employeeCode) this.employeeCode = await nextEmployeeCode();
+  if (this.isNew && this.role === "employee" && !this.employeeCode)
+    this.employeeCode = await nextEmployeeCode();
 });
 
 UserSchema.pre("save", function (next) {

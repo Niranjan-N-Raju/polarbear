@@ -4,7 +4,11 @@ import type { SalarySlipData } from "@/types/salary-slip";
 
 const dash = (value: string) => value || "-";
 // jsPDF's standard fonts don't have the ₹ glyph, which renders as a box and breaks text width/alignment.
-const formatCurrency = (value: number) => `Rs. ${new Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
+const formatCurrency = (value: number) =>
+  `Rs. ${new Intl.NumberFormat("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)}`;
 
 async function loadLogoDataUrl(logoUrl: string): Promise<string | null> {
   try {
@@ -22,7 +26,9 @@ async function loadLogoDataUrl(logoUrl: string): Promise<string | null> {
   }
 }
 
-export async function generateSalarySlipPdf(data: SalarySlipData): Promise<void> {
+export async function generateSalarySlipPdf(
+  data: SalarySlipData
+): Promise<void> {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 40;
@@ -39,12 +45,17 @@ export async function generateSalarySlipPdf(data: SalarySlipData): Promise<void>
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
-  doc.text(`${data.store.name} - Salary Slip`, pageWidth / 2, titleY, { align: "center" });
+  doc.text(`${data.store.name} - Salary Slip`, pageWidth / 2, titleY, {
+    align: "center",
+  });
   let headerBottomY = titleY + 24;
   if (data.store.address) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    const addressLines = doc.splitTextToSize(data.store.address, pageWidth - margin * 2);
+    const addressLines = doc.splitTextToSize(
+      data.store.address,
+      pageWidth - margin * 2
+    );
     doc.text(addressLines, pageWidth / 2, titleY + 16, { align: "center" });
     headerBottomY += addressLines.length * 10;
   }
@@ -55,9 +66,24 @@ export async function generateSalarySlipPdf(data: SalarySlipData): Promise<void>
     theme: "grid",
     styles: { fontSize: 9, cellPadding: 5 },
     body: [
-      ["Employee Name", data.employee.name, "Bank Name", dash(data.employee.bankName)],
-      ["PAN No", dash(data.employee.panNumber), "Account No", dash(data.employee.bankAccountNumber)],
-      ["Designation", dash(data.employee.position), "Pay Month", data.periodLabel],
+      [
+        "Employee Name",
+        data.employee.name,
+        "Bank Name",
+        dash(data.employee.bankName),
+      ],
+      [
+        "PAN No",
+        dash(data.employee.panNumber),
+        "Account No",
+        dash(data.employee.bankAccountNumber),
+      ],
+      [
+        "Designation",
+        dash(data.employee.position),
+        "Pay Month",
+        data.periodLabel,
+      ],
     ],
     columnStyles: {
       0: { fontStyle: "bold", cellWidth: 110 },
@@ -65,7 +91,8 @@ export async function generateSalarySlipPdf(data: SalarySlipData): Promise<void>
     },
   });
 
-  let cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+  let cursorY = (doc as unknown as { lastAutoTable: { finalY: number } })
+    .lastAutoTable.finalY;
 
   autoTable(doc, {
     startY: cursorY + 10,
@@ -73,8 +100,18 @@ export async function generateSalarySlipPdf(data: SalarySlipData): Promise<void>
     theme: "grid",
     styles: { fontSize: 9, cellPadding: 5 },
     body: [
-      ["Total Working Days", String(data.attendance.totalWorkingDays), "Present Days", String(data.attendance.presentDays)],
-      ["Absent Days", String(data.attendance.absentDays), "Extra Days", String(data.attendance.extraDaysTotal)],
+      [
+        "Total Working Days",
+        String(data.attendance.totalWorkingDays),
+        "Present Days",
+        String(data.attendance.presentDays),
+      ],
+      [
+        "Absent Days",
+        String(data.attendance.absentDays),
+        "Extra Days",
+        String(data.attendance.extraDaysTotal),
+      ],
     ],
     columnStyles: {
       0: { fontStyle: "bold", cellWidth: 110 },
@@ -82,7 +119,8 @@ export async function generateSalarySlipPdf(data: SalarySlipData): Promise<void>
     },
   });
 
-  cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+  cursorY = (doc as unknown as { lastAutoTable: { finalY: number } })
+    .lastAutoTable.finalY;
 
   autoTable(doc, {
     startY: cursorY + 10,
@@ -95,15 +133,43 @@ export async function generateSalarySlipPdf(data: SalarySlipData): Promise<void>
       ["HRA", "-", "ESI", "-"],
       ["Conveyance", "-", "Professional Tax", "-"],
       ["Special Allowance", "-", "Income Tax", "-"],
-      ["Other Allowance", "-", "Other Deduction", data.deductions.advanceTotal > 0 ? formatCurrency(data.deductions.advanceTotal) : "-"],
-      ...((data.deductions.paidEarlyIncentiveTotal ?? 0) > 0 ? [["", "", "Incentives already paid", formatCurrency(data.deductions.paidEarlyIncentiveTotal ?? 0)]] : []),
+      [
+        "Other Allowance",
+        "-",
+        "Other Deduction",
+        data.deductions.advanceTotal > 0
+          ? formatCurrency(data.deductions.advanceTotal)
+          : "-",
+      ],
+      ...((data.deductions.paidEarlyIncentiveTotal ?? 0) > 0
+        ? [
+            [
+              "",
+              "",
+              "Incentives already paid",
+              formatCurrency(data.deductions.paidEarlyIncentiveTotal ?? 0),
+            ],
+          ]
+        : []),
     ],
-    foot: [["Gross Earnings", formatCurrency(data.earnings.grossEarnings), "Total Deductions", formatCurrency(data.deductions.totalDeductions)]],
-    footStyles: { fontStyle: "bold", fillColor: [245, 240, 230], textColor: [20, 20, 20] },
+    foot: [
+      [
+        "Gross Earnings",
+        formatCurrency(data.earnings.grossEarnings),
+        "Total Deductions",
+        formatCurrency(data.deductions.totalDeductions),
+      ],
+    ],
+    footStyles: {
+      fontStyle: "bold",
+      fillColor: [245, 240, 230],
+      textColor: [20, 20, 20],
+    },
     headStyles: { fillColor: [245, 240, 230], textColor: [20, 20, 20] },
   });
 
-  cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+  cursorY = (doc as unknown as { lastAutoTable: { finalY: number } })
+    .lastAutoTable.finalY;
 
   autoTable(doc, {
     startY: cursorY + 10,
@@ -113,12 +179,16 @@ export async function generateSalarySlipPdf(data: SalarySlipData): Promise<void>
     head: [["Incentives", "Amount"]],
     body:
       data.incentives.length > 0
-        ? data.incentives.map((incentive) => [`${incentive.type}${incentive.paidEarly ? " (Paid early)" : ""}`, formatCurrency(incentive.amount)])
+        ? data.incentives.map((incentive) => [
+            `${incentive.type}${incentive.paidEarly ? " (Paid early)" : ""}`,
+            formatCurrency(incentive.amount),
+          ])
         : [["No incentives this period.", "-"]],
     headStyles: { fillColor: [245, 240, 230], textColor: [20, 20, 20] },
   });
 
-  cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+  cursorY = (doc as unknown as { lastAutoTable: { finalY: number } })
+    .lastAutoTable.finalY;
 
   autoTable(doc, {
     startY: cursorY + 10,
@@ -129,12 +199,17 @@ export async function generateSalarySlipPdf(data: SalarySlipData): Promise<void>
     columnStyles: { 1: { halign: "right" } },
   });
 
-  cursorY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+  cursorY = (doc as unknown as { lastAutoTable: { finalY: number } })
+    .lastAutoTable.finalY;
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text(data.store.name, pageWidth - margin, cursorY + 50, { align: "right" });
+  doc.text(data.store.name, pageWidth - margin, cursorY + 50, {
+    align: "right",
+  });
 
-  const fileName = `${data.employee.name.replaceAll(/\s+/g, "-")}-${data.period}-salary-slip.pdf`;
+  const fileName = `${data.employee.name.replaceAll(/\s+/g, "-")}-${
+    data.period
+  }-salary-slip.pdf`;
   doc.save(fileName);
 }

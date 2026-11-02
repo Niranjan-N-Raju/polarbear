@@ -1,8 +1,4 @@
-import {
-  MongoClient,
-  type Db,
-  type MongoClientOptions,
-} from "mongodb";
+import { MongoClient, type Db, type MongoClientOptions } from "mongodb";
 
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB;
@@ -47,14 +43,15 @@ export async function getInventoryDb(): Promise<Db> {
 
 export async function ensureInventoryIndexes(db: Db) {
   await Promise.all([
-    db.collection("products").createIndex(
-      { normalizedName: 1 },
-      { unique: true },
-    ),
-    db.collection("inventory_items").createIndex(
-      { storeId: 1, productId: 1, expiryDate: 1 },
-      { unique: true },
-    ),
+    db
+      .collection("products")
+      .createIndex({ normalizedName: 1 }, { unique: true }),
+    db
+      .collection("inventory_items")
+      .createIndex(
+        { storeId: 1, productId: 1, expiryDate: 1 },
+        { unique: true }
+      ),
     db.collection("inventory_items").createIndex({ storeId: 1, expiryDate: 1 }),
     db.collection("dumped_inventory").createIndex({ storeId: 1, dumpedAt: -1 }),
   ]);
@@ -64,10 +61,13 @@ export async function getInventoryDatabase() {
   const db = await getInventoryDb();
   // Index creation runs once per process; a failed attempt is retried on the next call.
   if (!cached.indexes) {
-    cached.indexes = ensureInventoryIndexes(db).then(() => undefined, (error) => {
-      cached.indexes = null;
-      throw error;
-    });
+    cached.indexes = ensureInventoryIndexes(db).then(
+      () => undefined,
+      (error) => {
+        cached.indexes = null;
+        throw error;
+      }
+    );
   }
   await cached.indexes;
   return db;

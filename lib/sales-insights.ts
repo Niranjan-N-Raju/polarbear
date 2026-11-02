@@ -29,7 +29,9 @@ export interface PaymentMixMonth {
 const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /** Average daily sale for each day of the week, across all provided sales. */
-export function computeWeekdayPerformance(sales: SaleInsightInput[]): WeekdayPerformance[] {
+export function computeWeekdayPerformance(
+  sales: SaleInsightInput[]
+): WeekdayPerformance[] {
   const byWeekday: number[][] = Array.from({ length: 7 }, () => []);
   for (const sale of sales) {
     const day = new Date(`${sale.date}T00:00:00`).getDay();
@@ -38,13 +40,19 @@ export function computeWeekdayPerformance(sales: SaleInsightInput[]): WeekdayPer
   return WEEKDAY_NAMES.map((name, index) => ({
     day: name,
     average: byWeekday[index].length
-      ? Math.round(byWeekday[index].reduce((sum, value) => sum + value, 0) / byWeekday[index].length)
+      ? Math.round(
+          byWeekday[index].reduce((sum, value) => sum + value, 0) /
+            byWeekday[index].length
+        )
       : 0,
   }));
 }
 
 /** Top expense categories by total amount, across all provided sales. */
-export function computeExpenseBreakdown(sales: SaleInsightInput[], limit = 8): ExpenseBreakdownItem[] {
+export function computeExpenseBreakdown(
+  sales: SaleInsightInput[],
+  limit = 8
+): ExpenseBreakdownItem[] {
   const totals = new Map<string, number>();
   for (const sale of sales) {
     for (const item of sale.expenses ?? []) {
@@ -58,8 +66,14 @@ export function computeExpenseBreakdown(sales: SaleInsightInput[], limit = 8): E
 }
 
 /** Monthly online/UPI/cash share of total sales, for the last `months` calendar months present in the data. */
-export function computePaymentMixTrend(sales: SaleInsightInput[], months = 6): PaymentMixMonth[] {
-  const byMonth = new Map<string, { sale: number; online: number; upi: number; cash: number }>();
+export function computePaymentMixTrend(
+  sales: SaleInsightInput[],
+  months = 6
+): PaymentMixMonth[] {
+  const byMonth = new Map<
+    string,
+    { sale: number; online: number; upi: number; cash: number }
+  >();
   for (const sale of sales) {
     const month = sale.date.slice(0, 7);
     const entry = byMonth.get(month) ?? { sale: 0, online: 0, upi: 0, cash: 0 };
@@ -74,9 +88,18 @@ export function computePaymentMixTrend(sales: SaleInsightInput[], months = 6): P
     .slice(-months)
     .map(([month, entry]) => ({
       month,
-      monthLabel: new Intl.DateTimeFormat("en-IN", { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${month}-01T00:00:00Z`)),
-      onlinePercent: entry.sale > 0 ? Math.round((entry.online / entry.sale) * 1000) / 10 : 0,
-      upiPercent: entry.sale > 0 ? Math.round((entry.upi / entry.sale) * 1000) / 10 : 0,
-      cashPercent: entry.sale > 0 ? Math.round((entry.cash / entry.sale) * 1000) / 10 : 0,
+      monthLabel: new Intl.DateTimeFormat("en-IN", {
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      }).format(new Date(`${month}-01T00:00:00Z`)),
+      onlinePercent:
+        entry.sale > 0
+          ? Math.round((entry.online / entry.sale) * 1000) / 10
+          : 0,
+      upiPercent:
+        entry.sale > 0 ? Math.round((entry.upi / entry.sale) * 1000) / 10 : 0,
+      cashPercent:
+        entry.sale > 0 ? Math.round((entry.cash / entry.sale) * 1000) / 10 : 0,
     }));
 }

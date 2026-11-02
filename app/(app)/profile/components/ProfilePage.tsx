@@ -20,7 +20,9 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export default function ProfilePage() {
-  useEffect(() => { document.title = "Profile · Polar Bear"; }, []);
+  useEffect(() => {
+    document.title = "Profile · Polar Bear";
+  }, []);
   const [me, setMe] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   // Set when the account must replace an admin-issued password before using the app.
@@ -28,7 +30,9 @@ export default function ProfilePage() {
   const [mustChangePassword, setMustChangePassword] = useState(
     () =>
       typeof globalThis.location !== "undefined" &&
-      new URLSearchParams(globalThis.location.search).get("passwordChangeRequired") === "1",
+      new URLSearchParams(globalThis.location.search).get(
+        "passwordChangeRequired"
+      ) === "1"
   );
 
   // Name form
@@ -110,10 +114,18 @@ export default function ProfilePage() {
     setNewPwError("");
     setConfirmPwError("");
 
-    const validationError = validateProfilePassword(currentPassword, newPassword, confirmPassword);
+    const validationError = validateProfilePassword(
+      currentPassword,
+      newPassword,
+      confirmPassword
+    );
     if (validationError) {
       if (!currentPassword.trim()) setCurrentPwError(validationError);
-      else if (!newPassword.trim() || newPassword.length < 12 || /uppercase|special|number|same as/i.test(validationError)) {
+      else if (
+        !newPassword.trim() ||
+        newPassword.length < 12 ||
+        /uppercase|special|number|same as/i.test(validationError)
+      ) {
         setNewPwError(validationError);
       } else {
         setConfirmPwError(validationError);
@@ -184,8 +196,12 @@ export default function ProfilePage() {
   return (
     <div className="space-y-8">
       <div className="rounded-2xl border border-brand-beige bg-white/80 p-6 shadow-[0_10px_30px_rgba(36,50,58,0.05)]">
-        <p className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-brand-teal sm:block">Account settings</p>
-        <h2 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">My Profile</h2>
+        <p className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-brand-teal sm:block">
+          Account settings
+        </p>
+        <h2 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">
+          My Profile
+        </h2>
         <p className="mt-2 text-sm text-gray-500">
           Manage your account details
         </p>
@@ -196,9 +212,12 @@ export default function ProfilePage() {
           role="alert"
           className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
         >
-          <p className="font-semibold">You must change your password before continuing.</p>
+          <p className="font-semibold">
+            You must change your password before continuing.
+          </p>
           <p className="mt-1">
-            Your password was set by an administrator. Choose a new password below to unlock the rest of the app.
+            Your password was set by an administrator. Choose a new password
+            below to unlock the rest of the app.
           </p>
         </div>
       )}
@@ -248,8 +267,13 @@ export default function ProfilePage() {
                     setNameError("");
                   }}
                   aria-invalid={Boolean(nameError)}
-                  aria-describedby={nameError ? "profile-name-error" : undefined}
-                  className={`w-full rounded-xl border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition ${fieldClass(Boolean(nameError), "border-brand-beige focus:border-brand-orange focus:ring-brand-orange/40")}`}
+                  aria-describedby={
+                    nameError ? "profile-name-error" : undefined
+                  }
+                  className={`w-full rounded-xl border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition ${fieldClass(
+                    Boolean(nameError),
+                    "border-brand-beige focus:border-brand-orange focus:ring-brand-orange/40"
+                  )}`}
                 />
                 <FieldError id="profile-name-error" message={nameError} />
               </div>
@@ -291,9 +315,14 @@ export default function ProfilePage() {
                     setCurrentPwError("");
                   }}
                   aria-invalid={Boolean(currentPwError)}
-                  aria-describedby={currentPwError ? "profile-current-pw-error" : undefined}
+                  aria-describedby={
+                    currentPwError ? "profile-current-pw-error" : undefined
+                  }
                   placeholder="Enter current password"
-                  className={`w-full rounded-xl border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition ${fieldClass(Boolean(currentPwError), "border-brand-beige focus:border-brand-orange focus:ring-brand-orange/40")}`}
+                  className={`w-full rounded-xl border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition ${fieldClass(
+                    Boolean(currentPwError),
+                    "border-brand-beige focus:border-brand-orange focus:ring-brand-orange/40"
+                  )}`}
                 />
                 <button
                   type="button"
@@ -303,7 +332,10 @@ export default function ProfilePage() {
                   {showCurrentPw ? <EyeSlashIcon /> : <EyeIcon />}
                 </button>
               </div>
-              <FieldError id="profile-current-pw-error" message={currentPwError} />
+              <FieldError
+                id="profile-current-pw-error"
+                message={currentPwError}
+              />
             </div>
             <div>
               <label
@@ -322,9 +354,14 @@ export default function ProfilePage() {
                     setNewPwError("");
                   }}
                   aria-invalid={Boolean(newPwError)}
-                  aria-describedby={newPwError ? "profile-new-pw-error" : undefined}
+                  aria-describedby={
+                    newPwError ? "profile-new-pw-error" : undefined
+                  }
                   placeholder="Min. 12 characters with uppercase, number & special char"
-                  className={`w-full rounded-xl border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition ${fieldClass(Boolean(newPwError), "border-brand-beige focus:border-brand-orange focus:ring-brand-orange/40")}`}
+                  className={`w-full rounded-xl border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition ${fieldClass(
+                    Boolean(newPwError),
+                    "border-brand-beige focus:border-brand-orange focus:ring-brand-orange/40"
+                  )}`}
                 />
                 <button
                   type="button"
@@ -353,9 +390,14 @@ export default function ProfilePage() {
                     setConfirmPwError("");
                   }}
                   aria-invalid={Boolean(confirmPwError)}
-                  aria-describedby={confirmPwError ? "profile-confirm-pw-error" : undefined}
+                  aria-describedby={
+                    confirmPwError ? "profile-confirm-pw-error" : undefined
+                  }
                   placeholder="Repeat new password"
-                  className={`w-full rounded-xl border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition ${fieldClass(Boolean(confirmPwError), "border-brand-beige focus:border-brand-orange focus:ring-brand-orange/40")}`}
+                  className={`w-full rounded-xl border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition ${fieldClass(
+                    Boolean(confirmPwError),
+                    "border-brand-beige focus:border-brand-orange focus:ring-brand-orange/40"
+                  )}`}
                 />
                 <button
                   type="button"
@@ -365,7 +407,10 @@ export default function ProfilePage() {
                   {showConfirmPw ? <EyeSlashIcon /> : <EyeIcon />}
                 </button>
               </div>
-              <FieldError id="profile-confirm-pw-error" message={confirmPwError} />
+              <FieldError
+                id="profile-confirm-pw-error"
+                message={confirmPwError}
+              />
             </div>
             <button
               type="submit"

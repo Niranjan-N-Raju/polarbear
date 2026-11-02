@@ -29,7 +29,7 @@ function effectiveExitDate(archivedAt: Date): Date {
 export function computeMonthlyAttrition(
   employees: AttritionEmployeeInput[],
   months = 6,
-  referenceDate: Date = new Date(),
+  referenceDate: Date = new Date()
 ): MonthlyAttrition[] {
   const anchorYear = referenceDate.getUTCFullYear();
   const anchorMonth = referenceDate.getUTCMonth();
@@ -37,7 +37,9 @@ export function computeMonthlyAttrition(
   const results: MonthlyAttrition[] = [];
   for (let offset = months - 1; offset >= 0; offset -= 1) {
     const monthStart = new Date(Date.UTC(anchorYear, anchorMonth - offset, 1));
-    const monthEnd = new Date(Date.UTC(anchorYear, anchorMonth - offset + 1, 1));
+    const monthEnd = new Date(
+      Date.UTC(anchorYear, anchorMonth - offset + 1, 1)
+    );
 
     let headcount = 0;
     let leavers = 0;
@@ -47,7 +49,9 @@ export function computeMonthlyAttrition(
       const joinedAt = toUtcDate(employee.dateOfJoining);
       if (joinedAt >= monthEnd) continue; // hadn't joined yet by this month
 
-      const archivedAt = employee.archivedAt ? toUtcDate(employee.archivedAt) : null;
+      const archivedAt = employee.archivedAt
+        ? toUtcDate(employee.archivedAt)
+        : null;
       const exitedAt = archivedAt ? effectiveExitDate(archivedAt) : null;
 
       // Present at the start of the month: joined before it, and not yet exited.
@@ -61,9 +65,15 @@ export function computeMonthlyAttrition(
       }
     }
 
-    const monthLabel = new Intl.DateTimeFormat("en-IN", { month: "short", year: "numeric", timeZone: "UTC" }).format(monthStart);
+    const monthLabel = new Intl.DateTimeFormat("en-IN", {
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(monthStart);
     results.push({
-      month: `${monthStart.getUTCFullYear()}-${String(monthStart.getUTCMonth() + 1).padStart(2, "0")}`,
+      month: `${monthStart.getUTCFullYear()}-${String(
+        monthStart.getUTCMonth() + 1
+      ).padStart(2, "0")}`,
       monthLabel,
       headcount,
       leavers,

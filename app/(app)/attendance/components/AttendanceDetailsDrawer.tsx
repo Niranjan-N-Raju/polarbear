@@ -50,14 +50,18 @@ export function AttendanceDetailsDrawer({
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 ${visible ? "opacity-100" : "opacity-0"}`}
+        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 ${
+          visible ? "opacity-100" : "opacity-0"
+        }`}
         style={{ height: "100vh" }}
         aria-hidden="true"
         onClick={close}
       />
       <div className="fixed inset-y-0 right-0 z-50 flex max-w-full pointer-events-none">
         <div
-          className={`h-full w-screen max-w-md flex flex-col overflow-hidden bg-white shadow-2xl pointer-events-auto transition-transform duration-200 ease-out ${visible ? "translate-x-0" : "translate-x-full"}`}
+          className={`h-full w-screen max-w-md flex flex-col overflow-hidden bg-white shadow-2xl pointer-events-auto transition-transform duration-200 ease-out ${
+            visible ? "translate-x-0" : "translate-x-full"
+          }`}
         >
           <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
             <h3 className="font-semibold text-gray-900">{formatDate(date)}</h3>
@@ -82,10 +86,19 @@ export function AttendanceDetailsDrawer({
                   onDragOver={(event) => onDragOver(event, status)}
                   onDragLeave={() => onDragLeave(status)}
                   onDrop={(event) => onDrop(event, status)}
-                  className={`rounded-lg p-1 transition ${dragOverStatus === status ? "bg-brand-peach/40 ring-2 ring-brand-orange" : ""}`}
+                  className={`rounded-lg p-1 transition ${
+                    dragOverStatus === status
+                      ? "bg-brand-peach/40 ring-2 ring-brand-orange"
+                      : ""
+                  }`}
                 >
                   <p
-                    className={`mb-2 text-sm font-semibold ${statusStyle[status].split(" ").find((item) => item.startsWith("text-")) ?? "text-gray-900"}`}
+                    className={`mb-2 text-sm font-semibold ${
+                      statusStyle[status]
+                        .split(" ")
+                        .find((item) => item.startsWith("text-")) ??
+                      "text-gray-900"
+                    }`}
                   >
                     {status} ({people.length})
                   </p>
@@ -101,7 +114,17 @@ export function AttendanceDetailsDrawer({
                             onDragStart(event, person.employeeId)
                           }
                           onDragEnd={onDragEnd}
-                          className={`inline-flex max-w-full cursor-grab items-center gap-1.5 rounded-lg ${statusStyle[status]} px-2.5 py-1.5 text-sm active:cursor-grabbing ${draggedEmployeeId === person.employeeId ? "opacity-40" : ""} ${updatingStatusId === person.employeeId ? "opacity-60" : ""}`}
+                          className={`inline-flex max-w-full cursor-grab items-center gap-1.5 rounded-lg ${
+                            statusStyle[status]
+                          } px-2.5 py-1.5 text-sm active:cursor-grabbing ${
+                            draggedEmployeeId === person.employeeId
+                              ? "opacity-40"
+                              : ""
+                          } ${
+                            updatingStatusId === person.employeeId
+                              ? "opacity-60"
+                              : ""
+                          }`}
                         >
                           <span className="min-w-0 truncate">
                             <span className="font-medium">{person.name}</span>
@@ -147,9 +170,19 @@ export function AttendanceDetailsDrawer({
                     <li
                       key={`${person.name}-${index}`}
                       draggable={updatingStatusId !== person.employeeId}
-                      onDragStart={(event) => onDragStart(event, person.employeeId)}
+                      onDragStart={(event) =>
+                        onDragStart(event, person.employeeId)
+                      }
                       onDragEnd={onDragEnd}
-                      className={`inline-flex max-w-full cursor-grab items-center gap-1.5 rounded-lg border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-sm text-gray-700 active:cursor-grabbing ${draggedEmployeeId === person.employeeId ? "opacity-40" : ""} ${updatingStatusId === person.employeeId ? "opacity-60" : ""}`}
+                      className={`inline-flex max-w-full cursor-grab items-center gap-1.5 rounded-lg border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-sm text-gray-700 active:cursor-grabbing ${
+                        draggedEmployeeId === person.employeeId
+                          ? "opacity-40"
+                          : ""
+                      } ${
+                        updatingStatusId === person.employeeId
+                          ? "opacity-60"
+                          : ""
+                      }`}
                     >
                       <span className="min-w-0 truncate">
                         <span className="font-medium">{person.name}</span>

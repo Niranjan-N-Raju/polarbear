@@ -28,17 +28,30 @@ export async function POST(request: NextRequest) {
   if (csrfError) return csrfError;
 
   const ip = getClientIp(request);
-  const rateCheck = checkRateLimit(`session-extend:${ip}`, RATE_LIMITS.sessionExtend);
+  const rateCheck = checkRateLimit(
+    `session-extend:${ip}`,
+    RATE_LIMITS.sessionExtend
+  );
   if (!rateCheck.allowed) {
     return NextResponse.json(
       { message: "Too many requests. Please try again later." },
-      { status: 429, headers: { "Retry-After": String(Math.ceil((rateCheck.retryAfterMs ?? 0) / 1000)) } },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(
+            Math.ceil((rateCheck.retryAfterMs ?? 0) / 1000)
+          ),
+        },
+      }
     );
   }
 
   const cookieToken = await getSessionCookieToken();
   if (!cookieToken) {
-    return NextResponse.json({ message: "Session not found." }, { status: 401 });
+    return NextResponse.json(
+      { message: "Session not found." },
+      { status: 401 }
+    );
   }
 
   try {
@@ -55,12 +68,18 @@ export async function POST(request: NextRequest) {
     const user = await User.findById(payload.id)
       .select("_id name email role isActive sessionVersion mustChangePassword")
       .lean();
-    const sessionVersion = typeof user?.sessionVersion === "number" ? user.sessionVersion : 0;
-    if (!user || user.isActive === false || sessionVersion !== payload.sessionVersion) {
+    const sessionVersion =
+      typeof user?.sessionVersion === "number" ? user.sessionVersion : 0;
+    if (
+      !user ||
+      user.isActive === false ||
+      sessionVersion !== payload.sessionVersion
+    ) {
       return unauthorized("User no longer exists.");
     }
 
-    const mustChangePassword = cookieToken.restricted || user.mustChangePassword === true;
+    const mustChangePassword =
+      cookieToken.restricted || user.mustChangePassword === true;
     const refreshedToken = await signSessionToken(
       {
         id: payload.id,
@@ -71,17 +90,21 @@ export async function POST(request: NextRequest) {
         sessionStart,
         mustChangePassword,
       },
-      getJwtSecret(),
+      getJwtSecret()
     );
 
-    auditLog("auth.session.extended", { actorId: payload.id, actorRole: user.role, ip });
+    auditLog("auth.session.extended", {
+      actorId: payload.id,
+      actorRole: user.role,
+      ip,
+    });
 
     const response = NextResponse.json({ message: "Session extended." });
     // Sliding-session behavior: issue a fresh 8h cookie from now (bounded by the 24h cap above).
     response.cookies.set(
       cookieToken.restricted ? PASSWORD_CHANGE_COOKIE : SESSION_COOKIE,
       refreshedToken,
-      SESSION_COOKIE_OPTS,
+      SESSION_COOKIE_OPTS
     );
     return response;
   } catch {

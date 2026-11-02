@@ -15,8 +15,14 @@ export const PNL_FIELD_GROUPS: PnlFieldGroup[] = [
     title: "Office Maintenance",
     fields: [
       { key: "omGarbageCharges", label: "Garbage charges (BBMP)" },
-      { key: "omSecurityCharges", label: "Security charges / Maintenance charges" },
-      { key: "omBroomsMopEtc", label: "Brooms / Mop / Mat / Airfreshener / Dustbin" },
+      {
+        key: "omSecurityCharges",
+        label: "Security charges / Maintenance charges",
+      },
+      {
+        key: "omBroomsMopEtc",
+        label: "Brooms / Mop / Mat / Airfreshener / Dustbin",
+      },
       { key: "omShoeUniforms", label: "Shoe / Uniforms" },
       { key: "omPlasticItems", label: "Plastic Items / Containers" },
       { key: "omPestControl", label: "Pest control" },
@@ -80,7 +86,10 @@ export const PNL_FIELD_GROUPS: PnlFieldGroup[] = [
     fields: [
       { key: "advLiveRadio", label: "Live Radio Exp" },
       { key: "advLeaflets", label: "Leaflets (Printing & Distribution)" },
-      { key: "advDiscountVouchers", label: "Discount / Gift Vouchers / others" },
+      {
+        key: "advDiscountVouchers",
+        label: "Discount / Gift Vouchers / others",
+      },
       { key: "advApiIntegration", label: "API integration" },
     ],
   },
@@ -110,7 +119,10 @@ export const PNL_FIELD_GROUPS: PnlFieldGroup[] = [
   {
     title: "Rates & Taxes",
     fields: [
-      { key: "rtLicenses", label: "Trade, FSSAI, labour, General, Weighing scale licenses" },
+      {
+        key: "rtLicenses",
+        label: "Trade, FSSAI, labour, General, Weighing scale licenses",
+      },
       { key: "rtParlourInsurance", label: "Parlour Insurance" },
     ],
   },

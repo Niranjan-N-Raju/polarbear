@@ -2,9 +2,7 @@ interface IconProps {
   className?: string;
 }
 
-export function CopyIcon({
-  className = "h-4 w-4",
-}: Readonly<IconProps>) {
+export function CopyIcon({ className = "h-4 w-4" }: Readonly<IconProps>) {
   return (
     <svg
       className={className}

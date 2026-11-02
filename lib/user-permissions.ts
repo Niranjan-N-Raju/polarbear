@@ -23,7 +23,7 @@ export function getAllowedAssignableRoles(callerRole: string): string[] {
 }
 
 export async function getAllowedFranchiseIdsForCaller(
-  auth: AuthInfo,
+  auth: AuthInfo
 ): Promise<string[] | null> {
   if (isGlobalRole(auth.role)) return null;
 
@@ -40,19 +40,22 @@ export async function getAllowedFranchiseIdsForCaller(
  */
 export async function getUnauthorizedFranchiseIds(
   auth: AuthInfo,
-  franchiseIds: string[],
+  franchiseIds: string[]
 ): Promise<string[]> {
   if (auth.role === "admin" || franchiseIds.length === 0) return [];
   const me = await User.findById(auth.id).select("franchises").lean();
   const assigned = new Set(
-    ((me as { franchises?: unknown[] } | null)?.franchises ?? []).map(String),
+    ((me as { franchises?: unknown[] } | null)?.franchises ?? []).map(String)
   );
   const remaining = franchiseIds.filter((id) => !assigned.has(String(id)));
   if (remaining.length === 0 || auth.role !== "sub_admin") return remaining;
 
   const validIds = remaining.filter((id) => mongoose.isValidObjectId(id));
   if (validIds.length === 0) return remaining;
-  const created = await Franchise.find({ _id: { $in: validIds }, createdBy: auth.id })
+  const created = await Franchise.find({
+    _id: { $in: validIds },
+    createdBy: auth.id,
+  })
     .select("_id")
     .lean();
   const createdIds = new Set(created.map((f) => String(f._id)));
@@ -60,7 +63,7 @@ export async function getUnauthorizedFranchiseIds(
 }
 
 export async function getTargetUserRole(
-  userId: string,
+  userId: string
 ): Promise<string | null> {
   const target = await User.findById(userId).select("role").lean();
   if (!target) return null;
@@ -69,7 +72,7 @@ export async function getTargetUserRole(
 
 export async function canManageTargetUser(
   auth: AuthInfo,
-  targetId: string,
+  targetId: string
 ): Promise<boolean> {
   if (auth.role === "admin") return true;
 

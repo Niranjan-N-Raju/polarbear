@@ -18,7 +18,10 @@ export interface AuthInfo {
 }
 
 /** Returns the current session token (full or password-change-only) from the cookie store. */
-export async function getSessionCookieToken(): Promise<{ token: string; restricted: boolean } | null> {
+export async function getSessionCookieToken(): Promise<{
+  token: string;
+  restricted: boolean;
+} | null> {
   const cookieStore = await cookies();
   const full = cookieStore.get(SESSION_COOKIE)?.value;
   if (full) return { token: full, restricted: false };
@@ -27,9 +30,10 @@ export async function getSessionCookieToken(): Promise<{ token: string; restrict
 }
 
 /** Verifies the session cookie token; returns its payload or null. */
-export async function getVerifiedSessionPayload(): Promise<
-  { payload: SessionPayload; restricted: boolean } | null
-> {
+export async function getVerifiedSessionPayload(): Promise<{
+  payload: SessionPayload;
+  restricted: boolean;
+} | null> {
   const cookieToken = await getSessionCookieToken();
   if (!cookieToken) return null;
   try {
@@ -55,7 +59,8 @@ export async function getAuthInfo(): Promise<AuthInfo | null> {
       .select("name role isActive sessionVersion mustChangePassword")
       .lean();
     if (!user || user.isActive === false) return null;
-    const sessionVersion = typeof user.sessionVersion === "number" ? user.sessionVersion : 0;
+    const sessionVersion =
+      typeof user.sessionVersion === "number" ? user.sessionVersion : 0;
     if (sessionVersion !== payload.sessionVersion || !user.role) return null;
 
     return {
@@ -63,7 +68,9 @@ export async function getAuthInfo(): Promise<AuthInfo | null> {
       role: user.role,
       name: user.name,
       mustChangePassword:
-        restricted || payload.mustChangePassword === true || user.mustChangePassword === true,
+        restricted ||
+        payload.mustChangePassword === true ||
+        user.mustChangePassword === true,
     };
   } catch {
     return null;

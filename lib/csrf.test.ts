@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 
 function makeRequest(
   method: string,
-  headers: Record<string, string> = {},
+  headers: Record<string, string> = {}
 ): NextRequest {
   return new NextRequest(new URL("http://localhost:3000/api/test"), {
     method,

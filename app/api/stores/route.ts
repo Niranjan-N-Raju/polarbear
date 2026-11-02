@@ -20,7 +20,10 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10)));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(searchParams.get("limit") ?? "50", 10))
+    );
     const skip = (page - 1) * limit;
 
     // Super admin sees all stores.
@@ -31,7 +34,12 @@ export async function GET(request: NextRequest) {
       ]);
       return NextResponse.json({
         franchises,
-        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
       });
     }
 
@@ -62,7 +70,7 @@ export async function GET(request: NextRequest) {
     console.error("[GET /api/stores]", err);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -81,11 +89,21 @@ export async function POST(request: NextRequest) {
 
   // Rate limiting
   const ip = getClientIp(request);
-  const rateCheck = checkRateLimit(`store-create:${auth.id}`, RATE_LIMITS.storeCreate);
+  const rateCheck = checkRateLimit(
+    `store-create:${auth.id}`,
+    RATE_LIMITS.storeCreate
+  );
   if (!rateCheck.allowed) {
     return NextResponse.json(
       { message: "Too many requests. Please try again later." },
-      { status: 429, headers: { "Retry-After": String(Math.ceil((rateCheck.retryAfterMs ?? 0) / 1000)) } },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(
+            Math.ceil((rateCheck.retryAfterMs ?? 0) / 1000)
+          ),
+        },
+      }
     );
   }
 
@@ -99,7 +117,7 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json(
       { message: parsed.error.issues[0]?.message ?? "Invalid input." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -160,13 +178,13 @@ export async function POST(request: NextRequest) {
     if (mongoErr.code === 11000 && mongoErr.keyPattern?.storeCode) {
       return NextResponse.json(
         { message: "A store with this code already exists." },
-        { status: 409 },
+        { status: 409 }
       );
     }
     console.error("[POST /api/stores]", err);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -184,7 +202,10 @@ export async function PATCH(request: NextRequest) {
 
   const storeId = new URL(request.url).searchParams.get("id");
   if (!storeId || !mongoose.isValidObjectId(storeId)) {
-    return NextResponse.json({ message: "A valid store id is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid store id is required." },
+      { status: 400 }
+    );
   }
 
   const jsonBody = await readJsonObject(request, 10_000);
@@ -195,7 +216,7 @@ export async function PATCH(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json(
       { message: parsed.error.issues[0]?.message ?? "Invalid input." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -216,7 +237,8 @@ export async function PATCH(request: NextRequest) {
       ownerPhone,
       ownerEmail,
     } = parsed.data;
-    const normalizedStoreType = storeType === "company" ? "company" : "franchise";
+    const normalizedStoreType =
+      storeType === "company" ? "company" : "franchise";
     const storeUpdate = {
       name,
       storeCode,
@@ -242,14 +264,18 @@ export async function PATCH(request: NextRequest) {
     const updated = await Franchise.findOneAndUpdate(
       { _id: storeId, createdBy: creatorFilter },
       updateOperation,
-      { new: true, runValidators: true },
+      { new: true, runValidators: true }
     ).lean();
 
     if (!updated) {
       const existing = await Franchise.exists({ _id: storeId });
       return NextResponse.json(
-        { message: existing ? "You can only edit stores you created." : "Store not found." },
-        { status: existing ? 403 : 404 },
+        {
+          message: existing
+            ? "You can only edit stores you created."
+            : "Store not found.",
+        },
+        { status: existing ? 403 : 404 }
       );
     }
 
@@ -269,14 +295,13 @@ export async function PATCH(request: NextRequest) {
     if (mongoErr.code === 11000 && mongoErr.keyPattern?.storeCode) {
       return NextResponse.json(
         { message: "A store with this code already exists." },
-        { status: 409 },
+        { status: 409 }
       );
     }
     console.error("[PATCH /api/stores]", err);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
-

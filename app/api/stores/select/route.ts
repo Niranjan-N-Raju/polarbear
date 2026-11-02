@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   if (!franchiseId) {
     return NextResponse.json(
       { message: "franchiseId is required." },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   if (!franchise) {
     return NextResponse.json(
       { message: "Franchise not found." },
-      { status: 404 },
+      { status: 404 }
     );
   }
 
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     if (!assigned && !created) {
       return NextResponse.json(
         { message: "Access denied to this franchise." },
-        { status: 403 },
+        { status: 403 }
       );
     }
   }
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
   response.cookies.set(
     FRANCHISE_NAME_COOKIE,
     franchiseName,
-    SESSION_COOKIE_OPTS,
+    SESSION_COOKIE_OPTS
   );
   return response;
 }

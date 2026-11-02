@@ -10,7 +10,7 @@ import type { SalePayload } from "@/types/sales-api";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const csrfError = validateCsrf(request);
   if (csrfError) return csrfError;
@@ -21,19 +21,30 @@ export async function PUT(
 
   const { id } = await params;
   if (!mongoose.isValidObjectId(id)) {
-    return NextResponse.json({ message: "A valid sale id is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid sale id is required." },
+      { status: 400 }
+    );
   }
 
   const jsonBody = await readJsonObject<SalePayload>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
-  const franchiseId = await getAuthorizedStoreAdminId(auth, body.franchiseId ?? null);
+  const franchiseId = await getAuthorizedStoreAdminId(
+    auth,
+    body.franchiseId ?? null
+  );
   if (!franchiseId) {
-    return NextResponse.json({ message: "A valid store is required." }, { status: 400 });
+    return NextResponse.json(
+      { message: "A valid store is required." },
+      { status: 400 }
+    );
   }
   const validation = validateSalePayload(body);
-  if ("error" in validation) return NextResponse.json({ message: validation.error }, { status: 400 });
-  const { date, totalSale, swiggy, zomato, upi, upiCharge, expenses } = validation.value;
+  if ("error" in validation)
+    return NextResponse.json({ message: validation.error }, { status: 400 });
+  const { date, totalSale, swiggy, zomato, upi, upiCharge, expenses } =
+    validation.value;
 
   await connectToDatabase();
   const existingSale = await Sale.findOne({ _id: id, franchise: franchiseId });
@@ -51,11 +62,14 @@ export async function PUT(
   if (duplicate) {
     return NextResponse.json(
       { message: "A sale already exists for this date." },
-      { status: 409 },
+      { status: 409 }
     );
   }
 
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalExpenses = expenses.reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  );
   const cash = totalSale - swiggy - zomato - upi;
   const bankingCash = cash - totalExpenses;
 
@@ -73,10 +87,14 @@ export async function PUT(
   try {
     await existingSale.save();
   } catch (saveError) {
-    if (saveError instanceof Error && "code" in saveError && saveError.code === 11000) {
+    if (
+      saveError instanceof Error &&
+      "code" in saveError &&
+      saveError.code === 11000
+    ) {
       return NextResponse.json(
         { message: "A sale already exists for this date." },
-        { status: 409 },
+        { status: 409 }
       );
     }
     throw saveError;

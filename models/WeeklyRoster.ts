@@ -24,25 +24,37 @@ const WeeklyRosterDaySchema = new Schema<IWeeklyRosterDay>(
     date: { type: String, required: true, match: /^\d{4}-\d{2}-\d{2}$/ },
     shift: { type: String, required: true, trim: true, maxlength: 80 },
   },
-  { _id: false },
+  { _id: false }
 );
 
 const WeeklyRosterEntrySchema = new Schema<IWeeklyRosterEntry>(
   {
-    employee: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    employee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     days: { type: [WeeklyRosterDaySchema], required: true },
   },
-  { _id: false },
+  { _id: false }
 );
 
 const WeeklyRosterSchema: Schema<IWeeklyRoster> = new Schema(
   {
-    franchise: { type: mongoose.Schema.Types.ObjectId, ref: "Franchise", required: true },
+    franchise: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Franchise",
+      required: true,
+    },
     weekStart: { type: String, required: true, match: /^\d{4}-\d{2}-\d{2}$/ },
     entries: { type: [WeeklyRosterEntrySchema], default: [] },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 WeeklyRosterSchema.index({ franchise: 1, weekStart: 1 }, { unique: true });
@@ -51,6 +63,9 @@ if (mongoose.models.WeeklyRoster) {
   mongoose.deleteModel("WeeklyRoster");
 }
 
-const WeeklyRoster: Model<IWeeklyRoster> = mongoose.model<IWeeklyRoster>("WeeklyRoster", WeeklyRosterSchema);
+const WeeklyRoster: Model<IWeeklyRoster> = mongoose.model<IWeeklyRoster>(
+  "WeeklyRoster",
+  WeeklyRosterSchema
+);
 
 export default WeeklyRoster;

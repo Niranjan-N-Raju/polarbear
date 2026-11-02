@@ -8,11 +8,7 @@ import {
   EmployeesIcon,
 } from "@/app/components/icons";
 import { useToast } from "@/app/hooks/useToast";
-import type {
-  CurrentUserRole,
-  FranchiseMini,
-  UserRow,
-} from "@/types/users";
+import type { CurrentUserRole, FranchiseMini, UserRow } from "@/types/users";
 import { usersRequest } from "../apicall/users";
 import { getUserCountLabel } from "../utils";
 import { FranchisePill, RoleBadge } from "./UserBadges";
@@ -31,7 +27,9 @@ function DeleteConfirm({
   async function handleDelete() {
     setDeleting(true);
     try {
-      const res = await usersRequest(`/api/users/${user._id}`, { method: "DELETE" });
+      const res = await usersRequest(`/api/users/${user._id}`, {
+        method: "DELETE",
+      });
       const data = (await res.json()) as { message?: string };
       if (!res.ok) {
         error(data.message ?? "Delete failed.");
@@ -93,7 +91,9 @@ function DeleteConfirm({
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function UsersPage() {
-  useEffect(() => { document.title = "User Management · Polar Bear"; }, []);
+  useEffect(() => {
+    document.title = "User Management · Polar Bear";
+  }, []);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [franchises, setFranchises] = useState<FranchiseMini[]>([]);
   const [currentUserRole, setCurrentUserRole] =
@@ -112,7 +112,9 @@ export default function UsersPage() {
       setHasError(false);
       try {
         const url = franchiseId
-          ? `/api/users?franchiseId=${encodeURIComponent(franchiseId)}&excludeEmployees=true&limit=500`
+          ? `/api/users?franchiseId=${encodeURIComponent(
+              franchiseId
+            )}&excludeEmployees=true&limit=500`
           : "/api/users?excludeEmployees=true&limit=500";
         const [usersRes, franchisesRes, meRes] = await Promise.all([
           usersRequest(url),
@@ -145,7 +147,7 @@ export default function UsersPage() {
         setLoading(false);
       }
     },
-    [error],
+    [error]
   );
 
   useEffect(() => {
@@ -171,8 +173,12 @@ export default function UsersPage() {
       {/* Page header */}
       <div className="flex flex-col gap-4 rounded-2xl border border-brand-beige bg-white/80 p-6 shadow-[0_10px_30px_rgba(36,50,58,0.05)] sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-brand-teal sm:block">Access management</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">Users</h1>
+          <p className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-brand-teal sm:block">
+            Access management
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-gray-900">
+            Users
+          </h1>
           <p className="mt-2 text-sm text-gray-500">
             Manage staff accounts and store access
           </p>

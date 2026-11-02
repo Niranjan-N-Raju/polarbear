@@ -11,7 +11,9 @@ async function run() {
   await workbook.xlsx.readFile(filePath);
 
   for (const worksheet of workbook.worksheets) {
-    console.log(`\n=== Sheet: "${worksheet.name}" (rows: ${worksheet.rowCount}, cols: ${worksheet.columnCount}) ===`);
+    console.log(
+      `\n=== Sheet: "${worksheet.name}" (rows: ${worksheet.rowCount}, cols: ${worksheet.columnCount}) ===`
+    );
     const maxHeaderRows = 2;
     for (let r = 1; r <= maxHeaderRows; r++) {
       const row = worksheet.getRow(r);

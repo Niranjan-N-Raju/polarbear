@@ -22,10 +22,14 @@ export function dayOfMonth(date: string): string {
   const day = Number(date.slice(-2));
   if (day >= 11 && day <= 13) return `${day}th`;
   switch (day % 10) {
-    case 1: return `${day}st`;
-    case 2: return `${day}nd`;
-    case 3: return `${day}rd`;
-    default: return `${day}th`;
+    case 1:
+      return `${day}st`;
+    case 2:
+      return `${day}nd`;
+    case 3:
+      return `${day}rd`;
+    default:
+      return `${day}th`;
   }
 }
 
@@ -34,7 +38,14 @@ export function formatAmount(value: number): string {
 }
 
 export function buildEmptyForm(): SaleForm {
-  return { date: "", totalSale: "", swiggy: "", zomato: "", upi: "", upiCharge: "" };
+  return {
+    date: "",
+    totalSale: "",
+    swiggy: "",
+    zomato: "",
+    upi: "",
+    upiCharge: "",
+  };
 }
 
 export function buildFormFromSale(sale: SaleRecord): SaleForm {
@@ -49,7 +60,10 @@ export function buildFormFromSale(sale: SaleRecord): SaleForm {
 }
 
 export function buildExpenseItemsFromSale(sale: SaleRecord): ExpenseItem[] {
-  return sale.expenses.map((expense) => ({ name: expense.name, amount: String(expense.amount) }));
+  return sale.expenses.map((expense) => ({
+    name: expense.name,
+    amount: String(expense.amount),
+  }));
 }
 
 export function sanitizeNumericInput(value: string): string {

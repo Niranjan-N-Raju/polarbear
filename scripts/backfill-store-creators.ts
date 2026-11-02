@@ -74,7 +74,7 @@ const FranchiseSchema = new mongoose.Schema(
     storeCode: { type: String, required: true, unique: true, uppercase: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 const User =
@@ -86,7 +86,7 @@ const Franchise =
 
 function ensureObjectId(
   value: unknown,
-  fieldName: string,
+  fieldName: string
 ): mongoose.Types.ObjectId {
   if (value instanceof mongoose.Types.ObjectId) {
     return value;
@@ -107,7 +107,7 @@ async function main() {
   if (!email?.trim()) {
     console.error(
       "Missing required --email argument.\n" +
-        "Example: npx tsx scripts/backfill-store-creators.ts --email test1@gmail.com --apply",
+        "Example: npx tsx scripts/backfill-store-creators.ts --email test1@gmail.com --apply"
     );
     process.exit(1);
   }
@@ -156,7 +156,7 @@ async function main() {
         name: s.name,
         storeCode: s.storeCode,
         createdBy: s.createdBy ? String(s.createdBy) : null,
-      })),
+      }))
     );
   }
 
@@ -176,15 +176,15 @@ async function main() {
 
   const storeResult = await Franchise.updateMany(
     { _id: { $in: storeIds } },
-    { $set: { createdBy: userId } },
+    { $set: { createdBy: userId } }
   );
   const userResult = await User.updateOne(
     { _id: userId },
-    { $addToSet: { franchises: { $each: storeIds } } },
+    { $addToSet: { franchises: { $each: storeIds } } }
   );
 
   console.log(
-    `\n✓ Updated stores (createdBy set): ${storeResult.modifiedCount}`,
+    `\n✓ Updated stores (createdBy set): ${storeResult.modifiedCount}`
   );
   console.log(`✓ Updated user franchise list:    ${userResult.modifiedCount}`);
 

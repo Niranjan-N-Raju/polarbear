@@ -26,7 +26,7 @@ const PnlInputSchema: Schema<IPnlInput> = new Schema(
       required: true,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 PnlInputSchema.index({ franchise: 1, period: 1 }, { unique: true });
@@ -38,6 +38,9 @@ if (mongoose.models.PnlInput) {
   mongoose.deleteModel("PnlInput");
 }
 
-const PnlInput: Model<IPnlInput> = mongoose.model<IPnlInput>("PnlInput", PnlInputSchema);
+const PnlInput: Model<IPnlInput> = mongoose.model<IPnlInput>(
+  "PnlInput",
+  PnlInputSchema
+);
 
 export default PnlInput;

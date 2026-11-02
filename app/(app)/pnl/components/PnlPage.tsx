@@ -13,12 +13,19 @@ import { SummaryCard } from "@/app/components/SummaryCard";
 import { MobileSummaryDrawer } from "@/app/components/MobileSummaryDrawer";
 import type { PnlData, PnlMonth } from "@/types/pnl";
 import { pnlRequest } from "../apicall/pnl";
-import { formatCurrency, formatPercent, formatPeriodLabel, formatRangeLabel } from "../utils";
+import {
+  formatCurrency,
+  formatPercent,
+  formatPeriodLabel,
+  formatRangeLabel,
+} from "../utils";
 import { PnlMonthDrawer } from "./PnlMonthDrawer";
 
 export default function PnlPage() {
   const { activeStoreId } = useStoreModal();
-  useEffect(() => { document.title = "P&L · Polar Bear"; }, []);
+  useEffect(() => {
+    document.title = "P&L · Polar Bear";
+  }, []);
   const { error } = useToast();
   const [data, setData] = useState<PnlData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,15 +39,25 @@ export default function PnlPage() {
     }
     setLoading(true);
     try {
-      const response = await pnlRequest(`/api/pnl?franchiseId=${encodeURIComponent(activeStoreId)}`);
+      const response = await pnlRequest(
+        `/api/pnl?franchiseId=${encodeURIComponent(activeStoreId)}`
+      );
       const result = (await response.json()) as PnlData & { message?: string };
-      if (!response.ok) throw new Error(result.message ?? "Failed to load P&L data.");
+      if (!response.ok)
+        throw new Error(result.message ?? "Failed to load P&L data.");
       setData(result);
       setViewMonth((current) =>
-        current ? result.months.find((month) => month.period === current.period) ?? current : null,
+        current
+          ? result.months.find((month) => month.period === current.period) ??
+            current
+          : null
       );
     } catch (loadError) {
-      error(loadError instanceof Error ? loadError.message : "Failed to load P&L data.");
+      error(
+        loadError instanceof Error
+          ? loadError.message
+          : "Failed to load P&L data."
+      );
     } finally {
       setLoading(false);
     }
@@ -55,10 +72,35 @@ export default function PnlPage() {
 
   const summaryCards = latest
     ? [
-        { label: "Revenue", value: formatCurrency(latest.revenue), color: "teal" as const, icon: faIndianRupeeSign, subtitle: formatPeriodLabel(latest.period) },
-        { label: "Store Expenses", value: formatCurrency(latest.storeExpenses), color: "orange" as const, icon: faReceipt, subtitle: formatPeriodLabel(latest.period) },
-        { label: "Payroll", value: formatCurrency(latest.payroll), color: "orange" as const, icon: faUsers, subtitle: formatPeriodLabel(latest.period) },
-        { label: "Net Profit", value: formatCurrency(latest.netProfit), color: latest.netProfit >= 0 ? ("teal" as const) : ("yellow" as const), icon: faChartLine, subtitle: `${formatPercent(latest.margin)} margin` },
+        {
+          label: "Revenue",
+          value: formatCurrency(latest.revenue),
+          color: "teal" as const,
+          icon: faIndianRupeeSign,
+          subtitle: formatPeriodLabel(latest.period),
+        },
+        {
+          label: "Store Expenses",
+          value: formatCurrency(latest.storeExpenses),
+          color: "orange" as const,
+          icon: faReceipt,
+          subtitle: formatPeriodLabel(latest.period),
+        },
+        {
+          label: "Payroll",
+          value: formatCurrency(latest.payroll),
+          color: "orange" as const,
+          icon: faUsers,
+          subtitle: formatPeriodLabel(latest.period),
+        },
+        {
+          label: "Net Profit",
+          value: formatCurrency(latest.netProfit),
+          color:
+            latest.netProfit >= 0 ? ("teal" as const) : ("yellow" as const),
+          icon: faChartLine,
+          subtitle: `${formatPercent(latest.margin)} margin`,
+        },
       ]
     : [];
 
@@ -124,20 +166,46 @@ export default function PnlPage() {
                 {months.map((month) => (
                   <tr
                     key={month.period}
-                    className={`border-b border-gray-100 last:border-0 ${month.isCurrent ? "bg-brand-teal/5" : ""}`}
+                    className={`border-b border-gray-100 last:border-0 ${
+                      month.isCurrent ? "bg-brand-teal/5" : ""
+                    }`}
                   >
                     <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{formatPeriodLabel(month.period)}</p>
-                      <p className="text-xs text-gray-500">{formatRangeLabel(month.from, month.to)}</p>
+                      <p className="font-medium text-gray-900">
+                        {formatPeriodLabel(month.period)}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatRangeLabel(month.from, month.to)}
+                      </p>
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-900">{formatCurrency(month.revenue)}</td>
-                    <td className="px-4 py-3 text-right text-gray-900">{formatCurrency(month.storeExpenses)}</td>
-                    <td className="px-4 py-3 text-right text-gray-900">{formatCurrency(month.payroll)}</td>
-                    <td className="px-4 py-3 text-right text-gray-900">{formatCurrency(month.totalExpenses)}</td>
-                    <td className={`px-4 py-3 text-right font-semibold ${month.netProfit >= 0 ? "text-brand-teal" : "text-red-600"}`}>
+                    <td className="px-4 py-3 text-right text-gray-900">
+                      {formatCurrency(month.revenue)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-900">
+                      {formatCurrency(month.storeExpenses)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-900">
+                      {formatCurrency(month.payroll)}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-900">
+                      {formatCurrency(month.totalExpenses)}
+                    </td>
+                    <td
+                      className={`px-4 py-3 text-right font-semibold ${
+                        month.netProfit >= 0
+                          ? "text-brand-teal"
+                          : "text-red-600"
+                      }`}
+                    >
                       {formatCurrency(month.netProfit)}
                     </td>
-                    <td className={`px-4 py-3 text-right font-medium ${month.netProfit >= 0 ? "text-brand-teal" : "text-red-600"}`}>
+                    <td
+                      className={`px-4 py-3 text-right font-medium ${
+                        month.netProfit >= 0
+                          ? "text-brand-teal"
+                          : "text-red-600"
+                      }`}
+                    >
                       {formatPercent(month.margin)}
                     </td>
                     <td className="px-4 py-3 text-right">

@@ -1,4 +1,6 @@
-export function EyeIcon({ className = "w-5 h-5" }: Readonly<{ className?: string }>) {
+export function EyeIcon({
+  className = "w-5 h-5",
+}: Readonly<{ className?: string }>) {
   return (
     <svg
       className={className}

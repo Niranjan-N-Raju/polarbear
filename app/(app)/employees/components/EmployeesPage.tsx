@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { faArchive, faCircleCheck, faUsers } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArchive,
+  faCircleCheck,
+  faUsers,
+} from "@fortawesome/free-solid-svg-icons";
 import { useToast } from "@/app/hooks/useToast";
 import { useStoreModal } from "@/app/(app)/store-context";
 import { SummaryCard } from "@/app/components/SummaryCard";
@@ -15,10 +19,7 @@ import {
 import { DatePicker } from "@/app/components/DatePicker";
 import { employeesRequest } from "../apicall/employees";
 import EmployeeFormDrawer from "./EmployeeFormDrawer";
-import type {
-  ActiveStore,
-  Employee,
-} from "@/types/employees";
+import type { ActiveStore, Employee } from "@/types/employees";
 import {
   formatExitDate,
   formatJoiningDate,
@@ -27,7 +28,9 @@ import {
 } from "../utils";
 
 export default function EmployeesPage() {
-  useEffect(() => { document.title = "Employees · Polar Bear"; }, []);
+  useEffect(() => {
+    document.title = "Employees · Polar Bear";
+  }, []);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -41,21 +44,30 @@ export default function EmployeesPage() {
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState<Employee | undefined>();
-  const [employeeToArchive, setEmployeeToArchive] = useState<Employee | null>(null);
+  const [editingEmployee, setEditingEmployee] = useState<
+    Employee | undefined
+  >();
+  const [employeeToArchive, setEmployeeToArchive] = useState<Employee | null>(
+    null
+  );
   const [exitDate, setExitDate] = useState("");
   const [archiving, setArchiving] = useState(false);
-  const [employeeToUnarchive, setEmployeeToUnarchive] = useState<Employee | null>(null);
+  const [employeeToUnarchive, setEmployeeToUnarchive] =
+    useState<Employee | null>(null);
   const [unarchivingId, setUnarchivingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [employeeTab, setEmployeeTab] = useState<"active" | "archived">("active");
+  const [employeeTab, setEmployeeTab] = useState<"active" | "archived">(
+    "active"
+  );
 
   const loadEmployees = useCallback(
     (franchiseId: string | null) => {
       setLoading(true);
       setHasError(false);
       const url = franchiseId
-        ? `/api/users?franchiseId=${encodeURIComponent(franchiseId)}&includeArchived=true&limit=500`
+        ? `/api/users?franchiseId=${encodeURIComponent(
+            franchiseId
+          )}&includeArchived=true&limit=500`
         : "/api/users?includeArchived=true&limit=500";
       return employeesRequest(url)
         .then((r) => r.json())
@@ -74,7 +86,7 @@ export default function EmployeesPage() {
         })
         .finally(() => setLoading(false));
     },
-    [error],
+    [error]
   );
 
   // Re-fetch employees and active store name whenever the selected store changes.
@@ -99,11 +111,14 @@ export default function EmployeesPage() {
     if (!employeeToArchive) return;
     setArchiving(true);
     try {
-      const res = await employeesRequest(`/api/users/${employeeToArchive._id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ exitDate }),
-      });
+      const res = await employeesRequest(
+        `/api/users/${employeeToArchive._id}`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ exitDate }),
+        }
+      );
       const data = (await res.json()) as { message?: string };
       if (!res.ok) {
         error(data.message ?? "Failed to archive employee.");
@@ -123,9 +138,12 @@ export default function EmployeesPage() {
     if (!employeeToUnarchive) return;
     setUnarchivingId(employeeToUnarchive._id);
     try {
-      const response = await employeesRequest(`/api/users/${employeeToUnarchive._id}`, {
-        method: "PUT",
-      });
+      const response = await employeesRequest(
+        `/api/users/${employeeToUnarchive._id}`,
+        {
+          method: "PUT",
+        }
+      );
       const data = (await response.json()) as { message?: string };
       if (!response.ok) {
         error(data.message ?? "Failed to unarchive employee.");
@@ -155,40 +173,76 @@ export default function EmployeesPage() {
     return matchesSearch && matchesStatus;
   });
   const employeesInTab = employees.filter((employee) =>
-    employeeTab === "active" ? employee.isActive !== false : employee.isActive === false,
+    employeeTab === "active"
+      ? employee.isActive !== false
+      : employee.isActive === false
   );
   const employeeWord = employeesInTab.length === 1 ? "employee" : "employees";
-  const employeeCount = employeesInTab.length > 0 ? String(employeesInTab.length) : "No";
+  const employeeCount =
+    employeesInTab.length > 0 ? String(employeesInTab.length) : "No";
   const countLabel = loading ? "Loading…" : `${employeeCount} ${employeeWord}`;
   const hasFilters = searchTerm !== "";
-  const activeEmployeeCount = employees.filter((employee) => employee.isActive !== false).length;
-  const formerEmployeeCount = employees.filter((employee) => employee.isActive === false).length;
+  const activeEmployeeCount = employees.filter(
+    (employee) => employee.isActive !== false
+  ).length;
+  const formerEmployeeCount = employees.filter(
+    (employee) => employee.isActive === false
+  ).length;
   const summaryCards = [
-    { label: "Total Employees", value: employees.length, color: "teal" as const, icon: faUsers },
-    { label: "Active Employees", value: activeEmployeeCount, color: "orange" as const, icon: faCircleCheck },
-    { label: "Former Employees", value: formerEmployeeCount, color: "yellow" as const, icon: faArchive },
+    {
+      label: "Total Employees",
+      value: employees.length,
+      color: "teal" as const,
+      icon: faUsers,
+    },
+    {
+      label: "Active Employees",
+      value: activeEmployeeCount,
+      color: "orange" as const,
+      icon: faCircleCheck,
+    },
+    {
+      label: "Former Employees",
+      value: formerEmployeeCount,
+      color: "yellow" as const,
+      icon: faArchive,
+    },
   ];
 
   return (
     <div className="space-y-8">
       <div className="flex flex-nowrap items-center justify-between gap-3 rounded-2xl border border-brand-beige bg-white/80 p-4 shadow-[0_10px_30px_rgba(36,50,58,0.05)] sm:p-6">
         <div className="min-w-0">
-          <p className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-brand-teal sm:block">People operations</p>
-          <h2 className="text-xl font-semibold tracking-tight text-gray-900 sm:mt-2 sm:text-3xl">Employees</h2>
-          <p className="mt-1 text-xs text-gray-500 sm:mt-2 sm:text-sm">{countLabel}</p>
+          <p className="hidden text-xs font-semibold uppercase tracking-[0.18em] text-brand-teal sm:block">
+            People operations
+          </p>
+          <h2 className="text-xl font-semibold tracking-tight text-gray-900 sm:mt-2 sm:text-3xl">
+            Employees
+          </h2>
+          <p className="mt-1 text-xs text-gray-500 sm:mt-2 sm:text-sm">
+            {countLabel}
+          </p>
         </div>
         <button
           onClick={() => void openModal()}
           className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap bg-brand-orange text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-brand-orange/90 transition sm:gap-2 sm:px-4"
         >
-          <span aria-hidden="true">+</span> <span className="sm:hidden">Add</span><span className="hidden sm:inline">Add Employee</span>
+          <span aria-hidden="true">+</span>{" "}
+          <span className="sm:hidden">Add</span>
+          <span className="hidden sm:inline">Add Employee</span>
         </button>
       </div>
 
       {!loading && !hasError && (
         <div className="hidden gap-3 sm:grid sm:grid-cols-3 sm:gap-4">
           {summaryCards.map((card) => (
-            <SummaryCard key={card.label} label={card.label} value={card.value} color={card.color} icon={card.icon} />
+            <SummaryCard
+              key={card.label}
+              label={card.label}
+              value={card.value}
+              color={card.color}
+              icon={card.icon}
+            />
           ))}
         </div>
       )}
@@ -202,7 +256,11 @@ export default function EmployeesPage() {
 
       {!loading && !hasError && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="flex border-b border-gray-200 px-6" role="tablist" aria-label="Employee status">
+          <div
+            className="flex border-b border-gray-200 px-6"
+            role="tablist"
+            aria-label="Employee status"
+          >
             {[
               { value: "active" as const, label: "Active Employees" },
               { value: "archived" as const, label: "Archived Employees" },
@@ -228,7 +286,9 @@ export default function EmployeesPage() {
           </div>
           <div className="flex flex-wrap items-end gap-3 border-b border-gray-100 px-6 py-4">
             <label className="min-w-56 flex-1">
-              <span className="mb-1 block text-xs font-medium text-gray-500">Search employees</span>
+              <span className="mb-1 block text-xs font-medium text-gray-500">
+                Search employees
+              </span>
               <input
                 type="search"
                 value={searchTerm}
@@ -264,16 +324,32 @@ export default function EmployeesPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-brand-sand/50 border-b border-brand-beige">
-                    <th className="text-left px-5 py-3 font-semibold text-gray-600">Name</th>
-                    <th className="text-left px-5 py-3 font-semibold text-gray-600">Phone</th>
-                    <th className="text-left px-5 py-3 font-semibold text-gray-600">Position</th>
-                    <th className="text-left px-5 py-3 font-semibold text-gray-600">Salary</th>
-                    <th className="text-left px-5 py-3 font-semibold text-gray-600">Joined</th>
-                    <th className="text-left px-5 py-3 font-semibold text-gray-600">Status</th>
+                    <th className="text-left px-5 py-3 font-semibold text-gray-600">
+                      Name
+                    </th>
+                    <th className="text-left px-5 py-3 font-semibold text-gray-600">
+                      Phone
+                    </th>
+                    <th className="text-left px-5 py-3 font-semibold text-gray-600">
+                      Position
+                    </th>
+                    <th className="text-left px-5 py-3 font-semibold text-gray-600">
+                      Salary
+                    </th>
+                    <th className="text-left px-5 py-3 font-semibold text-gray-600">
+                      Joined
+                    </th>
+                    <th className="text-left px-5 py-3 font-semibold text-gray-600">
+                      Status
+                    </th>
                     {employeeTab === "archived" && (
-                      <th className="text-left px-5 py-3 font-semibold text-gray-600">Exit Date</th>
+                      <th className="text-left px-5 py-3 font-semibold text-gray-600">
+                        Exit Date
+                      </th>
                     )}
-                    <th className="text-right px-5 py-3 font-semibold text-gray-600">Actions</th>
+                    <th className="text-right px-5 py-3 font-semibold text-gray-600">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-beige/60">
@@ -288,7 +364,10 @@ export default function EmployeesPage() {
                     >
                       <td className="px-5 py-3.5 font-medium text-gray-900">
                         <div className="flex items-center gap-2">
-                          <span>{emp.name}{emp.employeeCode ? ` (${emp.employeeCode})` : ''}</span>
+                          <span>
+                            {emp.name}
+                            {emp.employeeCode ? ` (${emp.employeeCode})` : ""}
+                          </span>
                           {isBirthdayToday(emp) && (
                             <span
                               className="text-brand-orange"
@@ -326,7 +405,9 @@ export default function EmployeesPage() {
                         </span>
                       </td>
                       {employeeTab === "archived" && (
-                        <td className="px-5 py-3.5 text-gray-600">{formatExitDate(emp.archivedAt)}</td>
+                        <td className="px-5 py-3.5 text-gray-600">
+                          {formatExitDate(emp.archivedAt)}
+                        </td>
                       )}
                       <td className="px-5 py-3.5">
                         <div className="flex justify-end gap-1">
@@ -344,7 +425,10 @@ export default function EmployeesPage() {
                           {employeeTab === "active" ? (
                             <button
                               type="button"
-                              onClick={() => { setEmployeeToArchive(emp); setExitDate(todayISO()); }}
+                              onClick={() => {
+                                setEmployeeToArchive(emp);
+                                setExitDate(todayISO());
+                              }}
                               aria-label={`Archive ${emp.name}`}
                               className="group relative rounded-md p-1.5 text-brand-orange transition hover:bg-brand-orange/10 hover:text-brand-orange"
                             >
@@ -392,14 +476,20 @@ export default function EmployeesPage() {
               aria-labelledby="archive-employee-title"
               className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
             >
-              <h3 id="archive-employee-title" className="text-lg font-semibold text-gray-900">
+              <h3
+                id="archive-employee-title"
+                className="text-lg font-semibold text-gray-900"
+              >
                 Archive employee?
               </h3>
               <p className="mt-2 text-sm leading-6 text-gray-500">
-                Archive {employeeToArchive.name}? They will no longer appear in the active employee list.
+                Archive {employeeToArchive.name}? They will no longer appear in
+                the active employee list.
               </p>
               <label className="mt-4 block">
-                <span className="mb-1 block text-sm font-medium text-gray-700">Exit date</span>
+                <span className="mb-1 block text-sm font-medium text-gray-700">
+                  Exit date
+                </span>
                 <DatePicker
                   value={exitDate}
                   max={todayISO()}
@@ -451,7 +541,8 @@ export default function EmployeesPage() {
                 Unarchive employee?
               </h3>
               <p className="mt-2 text-sm leading-6 text-gray-500">
-                Unarchive {employeeToUnarchive.name}? They will return to the active employee list.
+                Unarchive {employeeToUnarchive.name}? They will return to the
+                active employee list.
               </p>
               <div className="mt-6 flex justify-end gap-3">
                 <button

@@ -22,7 +22,7 @@ export function validateCsrf(request: NextRequest): NextResponse | null {
   if (!origin && !referer) {
     return NextResponse.json(
       { message: "Forbidden: missing origin header." },
-      { status: 403 },
+      { status: 403 }
     );
   }
 
@@ -33,13 +33,13 @@ export function validateCsrf(request: NextRequest): NextResponse | null {
       if (originHost !== host) {
         return NextResponse.json(
           { message: "Forbidden: cross-origin request." },
-          { status: 403 },
+          { status: 403 }
         );
       }
     } catch {
       return NextResponse.json(
         { message: "Forbidden: invalid origin." },
-        { status: 403 },
+        { status: 403 }
       );
     }
     return null;
@@ -52,13 +52,13 @@ export function validateCsrf(request: NextRequest): NextResponse | null {
       if (refererHost !== host) {
         return NextResponse.json(
           { message: "Forbidden: cross-origin request." },
-          { status: 403 },
+          { status: 403 }
         );
       }
     } catch {
       return NextResponse.json(
         { message: "Forbidden: invalid referer." },
-        { status: 403 },
+        { status: 403 }
       );
     }
   }

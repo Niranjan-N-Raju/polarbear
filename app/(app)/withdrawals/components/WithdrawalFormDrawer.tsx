@@ -8,7 +8,12 @@ import { useToast } from "@/app/hooks/useToast";
 import { useDrawerClose } from "@/app/hooks/useDrawerClose";
 import { useStoreModal } from "@/app/(app)/store-context";
 import { withdrawalsRequest } from "../apicall/withdrawals";
-import { buildEmptyForm, toNumber, todayISO, WITHDRAWAL_TYPE_OPTIONS } from "../utils";
+import {
+  buildEmptyForm,
+  toNumber,
+  todayISO,
+  WITHDRAWAL_TYPE_OPTIONS,
+} from "../utils";
 import type { WithdrawalForm, WithdrawalRecord } from "@/types/withdrawals";
 
 const NUMBER_PATTERN = /^\d*\.?\d*$/;
@@ -26,25 +31,41 @@ export function WithdrawalFormDrawer({
   const { error, success } = useToast();
   const { visible, requestClose } = useDrawerClose();
   const close = () => requestClose(onClose);
-  const [form, setForm] = useState<WithdrawalForm>(
-    () =>
-      editRecord
-        ? { date: editRecord.date, amount: String(editRecord.amount), type: editRecord.type, reason: editRecord.reason }
-        : buildEmptyForm(),
+  const [form, setForm] = useState<WithdrawalForm>(() =>
+    editRecord
+      ? {
+          date: editRecord.date,
+          amount: String(editRecord.amount),
+          type: editRecord.type,
+          reason: editRecord.reason,
+        }
+      : buildEmptyForm()
   );
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof WithdrawalForm, string>>>({});
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<keyof WithdrawalForm, string>>
+  >({});
   const [saving, setSaving] = useState(false);
 
-  function updateField<K extends keyof WithdrawalForm>(field: K, value: WithdrawalForm[K]) {
+  function updateField<K extends keyof WithdrawalForm>(
+    field: K,
+    value: WithdrawalForm[K]
+  ) {
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
   }
 
-  function getValidationErrors(): Partial<Record<keyof WithdrawalForm, string>> {
+  function getValidationErrors(): Partial<
+    Record<keyof WithdrawalForm, string>
+  > {
     const errors: Partial<Record<keyof WithdrawalForm, string>> = {};
     if (!form.date) errors.date = "This field is required.";
-    else if (form.date > todayISO()) errors.date = "Date cannot be in the future.";
-    if (!form.amount.trim() || !NUMBER_PATTERN.test(form.amount) || toNumber(form.amount) <= 0) {
+    else if (form.date > todayISO())
+      errors.date = "Date cannot be in the future.";
+    if (
+      !form.amount.trim() ||
+      !NUMBER_PATTERN.test(form.amount) ||
+      toNumber(form.amount) <= 0
+    ) {
       errors.amount = "Enter a valid amount.";
     }
     return errors;
@@ -62,23 +83,29 @@ export function WithdrawalFormDrawer({
 
     setSaving(true);
     try {
-      const response = await withdrawalsRequest(editRecord ? `/api/withdrawals/${editRecord.id}` : "/api/withdrawals", {
-        method: editRecord ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          franchiseId: activeStoreId,
-          date: form.date,
-          amount: toNumber(form.amount),
-          type: form.type,
-          reason: form.reason.trim(),
-        }),
-      });
+      const response = await withdrawalsRequest(
+        editRecord ? `/api/withdrawals/${editRecord.id}` : "/api/withdrawals",
+        {
+          method: editRecord ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            franchiseId: activeStoreId,
+            date: form.date,
+            amount: toNumber(form.amount),
+            type: form.type,
+            reason: form.reason.trim(),
+          }),
+        }
+      );
       const data = (await response.json()) as { message?: string };
-      if (!response.ok) throw new Error(data.message ?? "Failed to save entry.");
+      if (!response.ok)
+        throw new Error(data.message ?? "Failed to save entry.");
       success(data.message ?? "Entry saved successfully.");
       requestClose(onSaved);
     } catch (saveError) {
-      error(saveError instanceof Error ? saveError.message : "Failed to save entry.");
+      error(
+        saveError instanceof Error ? saveError.message : "Failed to save entry."
+      );
     } finally {
       setSaving(false);
     }
@@ -87,15 +114,23 @@ export function WithdrawalFormDrawer({
   return (
     <>
       <div
-        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 ${visible ? "opacity-100" : "opacity-0"}`}
+        className={`fixed inset-0 z-40 bg-black/40 transition-opacity duration-200 ${
+          visible ? "opacity-100" : "opacity-0"
+        }`}
         aria-hidden="true"
         onClick={close}
         style={{ height: "100vh" }}
       />
       <div className="fixed inset-y-0 right-0 z-50 flex max-w-full pointer-events-none">
-        <div className={`bg-white shadow-2xl w-screen max-w-md h-full flex flex-col pointer-events-auto transition-transform duration-200 ease-out ${visible ? "translate-x-0" : "translate-x-full"}`}>
+        <div
+          className={`bg-white shadow-2xl w-screen max-w-md h-full flex flex-col pointer-events-auto transition-transform duration-200 ease-out ${
+            visible ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
           <div className="flex items-center justify-between px-6 py-4 border-b border-brand-beige">
-            <h2 className="text-lg font-bold text-gray-900">{editRecord ? "Edit Entry" : "Add Entry"}</h2>
+            <h2 className="text-lg font-bold text-gray-900">
+              {editRecord ? "Edit Entry" : "Add Entry"}
+            </h2>
             <button
               onClick={close}
               data-unsaved-reset="true"
@@ -106,9 +141,18 @@ export function WithdrawalFormDrawer({
           </div>
 
           <div className="flex-1 overflow-y-auto px-6 py-5">
-            <form id="withdrawal-form" method="post" onSubmit={(event) => void handleSubmit(event)} noValidate className="space-y-4">
+            <form
+              id="withdrawal-form"
+              method="post"
+              onSubmit={(event) => void handleSubmit(event)}
+              noValidate
+              className="space-y-4"
+            >
               <div>
-                <label htmlFor="withdrawal-date" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="withdrawal-date"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Date <span className="text-red-500">*</span>
                 </label>
                 <DatePicker
@@ -117,10 +161,17 @@ export function WithdrawalFormDrawer({
                   max={todayISO()}
                   onChange={(nextValue) => updateField("date", nextValue)}
                   ariaInvalid={Boolean(fieldErrors.date)}
-                  ariaDescribedBy={fieldErrors.date ? "withdrawal-date-error" : undefined}
-                  className={`w-full rounded-xl border px-4 py-2.5 text-left text-sm text-gray-900 focus:outline-none focus:ring-2 transition ${fieldClass(Boolean(fieldErrors.date))}`}
+                  ariaDescribedBy={
+                    fieldErrors.date ? "withdrawal-date-error" : undefined
+                  }
+                  className={`w-full rounded-xl border px-4 py-2.5 text-left text-sm text-gray-900 focus:outline-none focus:ring-2 transition ${fieldClass(
+                    Boolean(fieldErrors.date)
+                  )}`}
                 />
-                <FieldError id="withdrawal-date-error" message={fieldErrors.date} />
+                <FieldError
+                  id="withdrawal-date-error"
+                  message={fieldErrors.date}
+                />
               </div>
 
               <div>
@@ -146,7 +197,10 @@ export function WithdrawalFormDrawer({
               </div>
 
               <div>
-                <label htmlFor="withdrawal-amount" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="withdrawal-amount"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Amount <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -154,23 +208,40 @@ export function WithdrawalFormDrawer({
                   type="text"
                   inputMode="decimal"
                   value={form.amount}
-                  onChange={(event) => updateField("amount", event.target.value.replaceAll(/[^\d.]/g, ""))}
+                  onChange={(event) =>
+                    updateField(
+                      "amount",
+                      event.target.value.replaceAll(/[^\d.]/g, "")
+                    )
+                  }
                   aria-invalid={Boolean(fieldErrors.amount)}
-                  aria-describedby={fieldErrors.amount ? "withdrawal-amount-error" : undefined}
+                  aria-describedby={
+                    fieldErrors.amount ? "withdrawal-amount-error" : undefined
+                  }
                   placeholder="0.00"
-                  className={`w-full rounded-xl border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition ${fieldClass(Boolean(fieldErrors.amount))}`}
+                  className={`w-full rounded-xl border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 transition ${fieldClass(
+                    Boolean(fieldErrors.amount)
+                  )}`}
                 />
-                <FieldError id="withdrawal-amount-error" message={fieldErrors.amount} />
+                <FieldError
+                  id="withdrawal-amount-error"
+                  message={fieldErrors.amount}
+                />
               </div>
 
               <div>
-                <label htmlFor="withdrawal-reason" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="withdrawal-reason"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Reason
                 </label>
                 <textarea
                   id="withdrawal-reason"
                   value={form.reason}
-                  onChange={(event) => updateField("reason", event.target.value)}
+                  onChange={(event) =>
+                    updateField("reason", event.target.value)
+                  }
                   maxLength={300}
                   rows={3}
                   placeholder="Optional note"

@@ -12,4 +12,9 @@ export interface InventoryItem {
   expiryDate: string;
 }
 
-export type InventoryFilter = "all" | "expired" | "one_day" | "urgent" | "healthy";
+export type InventoryFilter =
+  | "all"
+  | "expired"
+  | "one_day"
+  | "urgent"
+  | "healthy";

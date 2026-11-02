@@ -2,7 +2,9 @@ interface IconProps {
   className?: string;
 }
 
-export function RestoreIcon({ className = "w-4 h-4 shrink-0" }: Readonly<IconProps>) {
+export function RestoreIcon({
+  className = "w-4 h-4 shrink-0",
+}: Readonly<IconProps>) {
   return (
     <svg
       className={className}

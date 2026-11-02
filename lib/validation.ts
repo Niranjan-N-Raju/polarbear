@@ -12,7 +12,7 @@ export const passwordSchema = z
   .regex(/[0-9]/, "Password must contain at least one digit.")
   .regex(
     /[^A-Za-z0-9]/,
-    "Password must contain at least one special character.",
+    "Password must contain at least one special character."
   );
 
 /** RFC 5322 simplified email validation */
@@ -43,7 +43,7 @@ const storePhoneSchema = z
   .transform((value) => value?.trim())
   .refine(
     (value) => !value || /^\d{10}$/.test(value),
-    "Phone number must be exactly 10 digits.",
+    "Phone number must be exactly 10 digits."
   );
 
 const optionalDigitsSchema = (message: string) =>
@@ -55,7 +55,7 @@ const optionalDigitsSchema = (message: string) =>
 const optionalAadharSchema = z
   .preprocess(
     (value) => (typeof value === "string" ? value.replace(/\s/g, "") : value),
-    z.string().optional(),
+    z.string().optional()
   )
   .refine((v) => !v || /^\d{12}$/.test(v), "Aadhar number must be 12 digits.");
 
@@ -65,7 +65,7 @@ const optionalPanSchema = z
   .transform((v) => v?.toUpperCase())
   .refine(
     (v) => !v || /^[A-Z]{5}\d{4}[A-Z]$/.test(v),
-    "PAN must be 5 letters, 4 digits, and 1 letter.",
+    "PAN must be 5 letters, 4 digits, and 1 letter."
   );
 
 const OBJECT_ID_PATTERN = /^[a-f\d]{24}$/i;
@@ -111,7 +111,7 @@ export const dateStringSchema = z
       const d = new Date(v);
       return !isNaN(d.getTime());
     },
-    { message: "Invalid date format." },
+    { message: "Invalid date format." }
   );
 
 /** Login request body schema */
@@ -141,7 +141,7 @@ export const createUserBodySchema = z.object({
   panNumber: optionalPanSchema,
   salary: salarySchema.optional(),
   bankAccountNumber: optionalDigitsSchema(
-    "Account number must contain digits only.",
+    "Account number must contain digits only."
   ),
   bankName: shortTextSchema(100),
   bankIfsc: shortTextSchema(20),
@@ -151,7 +151,9 @@ export const createUserBodySchema = z.object({
 
 /** Create store request body schema */
 export const createStoreBodySchema = z.object({
-  name: nameSchema.pipe(z.string().max(100, "Store name must be 100 characters or fewer.")),
+  name: nameSchema.pipe(
+    z.string().max(100, "Store name must be 100 characters or fewer.")
+  ),
   storeCode: storeCodeSchema,
   address: shortTextSchema(300),
   phone: storePhoneSchema,
@@ -164,7 +166,7 @@ export const createStoreBodySchema = z.object({
   ownerPhone: storePhoneSchema,
   ownerEmail: z.preprocess(
     (value) => (value === "" ? undefined : value),
-    emailSchema.optional(),
+    emailSchema.optional()
   ),
 });
 
@@ -198,7 +200,7 @@ export const patchUserBodySchema = z.object({
   panNumber: optionalPanSchema,
   salary: salarySchema.optional(),
   bankAccountNumber: optionalDigitsSchema(
-    "Account number must contain digits only.",
+    "Account number must contain digits only."
   ),
   bankName: shortTextSchema(100),
   bankIfsc: shortTextSchema(20),
@@ -211,7 +213,7 @@ export const patchUserBodySchema = z.object({
  */
 export async function parseBodyWithLimit(
   request: Request,
-  maxBytes = 100_000,
+  maxBytes = 100_000
 ): Promise<unknown | null> {
   const contentLength = request.headers.get("content-length");
   if (contentLength && parseInt(contentLength, 10) > maxBytes) {

@@ -7,7 +7,11 @@ import Franchise from "@/models/Franchise";
 import Sale from "@/models/Sale";
 import { requireAuth } from "@/lib/api-auth";
 import { computeMonthlyAttrition } from "@/lib/attrition";
-import { computeExpenseBreakdown, computePaymentMixTrend, computeWeekdayPerformance } from "@/lib/sales-insights";
+import {
+  computeExpenseBreakdown,
+  computePaymentMixTrend,
+  computeWeekdayPerformance,
+} from "@/lib/sales-insights";
 import { currentMonthRange } from "@/lib/date-utils";
 
 const FRANCHISE_COOKIE = "em_franchise";
@@ -146,7 +150,14 @@ export async function GET() {
 
     const { from, to } = currentMonthRange();
     const salesAgg = await Sale.aggregate([
-      { $match: { franchise: { $in: scopeIds.map((id) => new mongoose.Types.ObjectId(id)) }, date: { $gte: from, $lte: to } } },
+      {
+        $match: {
+          franchise: {
+            $in: scopeIds.map((id) => new mongoose.Types.ObjectId(id)),
+          },
+          date: { $gte: from, $lte: to },
+        },
+      },
       { $group: { _id: null, total: { $sum: "$totalSale" } } },
     ]);
     const salesSummary = salesAgg[0]?.total ?? 0;

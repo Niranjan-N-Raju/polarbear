@@ -39,12 +39,21 @@ export function nowSeconds(): number {
   return Math.floor(Date.now() / 1000);
 }
 
-export async function signSessionToken(claims: SessionClaims, secret: Uint8Array): Promise<string> {
+export async function signSessionToken(
+  claims: SessionClaims,
+  secret: Uint8Array
+): Promise<string> {
   const { mustChangePassword, ...rest } = claims;
   const now = nowSeconds();
   // Never outlive the absolute 24h session cap.
-  const exp = Math.min(now + SESSION_TTL_SECONDS, claims.sessionStart + MAX_SESSION_AGE_SECONDS);
-  return new SignJWT({ ...rest, ...(mustChangePassword ? { mustChangePassword: true } : {}) })
+  const exp = Math.min(
+    now + SESSION_TTL_SECONDS,
+    claims.sessionStart + MAX_SESSION_AGE_SECONDS
+  );
+  return new SignJWT({
+    ...rest,
+    ...(mustChangePassword ? { mustChangePassword: true } : {}),
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuer(SESSION_ISSUER)
     .setAudience(SESSION_AUDIENCE)
@@ -54,15 +63,22 @@ export async function signSessionToken(claims: SessionClaims, secret: Uint8Array
 }
 
 /** Verifies signature, algorithm, issuer, audience and required claims. Throws on failure. */
-export async function verifySessionToken(token: string, secret: Uint8Array): Promise<SessionPayload> {
+export async function verifySessionToken(
+  token: string,
+  secret: Uint8Array
+): Promise<SessionPayload> {
   const { payload } = await jwtVerify(token, secret, {
     algorithms: ["HS256"],
     issuer: SESSION_ISSUER,
     audience: SESSION_AUDIENCE,
     requiredClaims: ["exp", "id", "sessionVersion"],
   });
-  if (typeof payload.id !== "string" || !payload.id) throw new Error("Invalid session id claim");
-  if (typeof payload.sessionVersion !== "number" || !Number.isInteger(payload.sessionVersion)) {
+  if (typeof payload.id !== "string" || !payload.id)
+    throw new Error("Invalid session id claim");
+  if (
+    typeof payload.sessionVersion !== "number" ||
+    !Number.isInteger(payload.sessionVersion)
+  ) {
     throw new Error("Invalid sessionVersion claim");
   }
   return payload as SessionPayload;
@@ -70,13 +86,19 @@ export async function verifySessionToken(token: string, secret: Uint8Array): Pro
 
 /** Original login time in seconds; legacy tokens without sessionStart fall back to iat. */
 export function getSessionStart(payload: JWTPayload): number | null {
-  if (typeof payload.sessionStart === "number" && Number.isFinite(payload.sessionStart)) {
+  if (
+    typeof payload.sessionStart === "number" &&
+    Number.isFinite(payload.sessionStart)
+  ) {
     return payload.sessionStart;
   }
   return typeof payload.iat === "number" ? payload.iat : null;
 }
 
-export function isSessionExpiredAbsolute(payload: JWTPayload, now = nowSeconds()): boolean {
+export function isSessionExpiredAbsolute(
+  payload: JWTPayload,
+  now = nowSeconds()
+): boolean {
   const start = getSessionStart(payload);
   return start === null || now - start >= MAX_SESSION_AGE_SECONDS;
 }

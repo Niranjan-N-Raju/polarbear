@@ -5,7 +5,7 @@ interface ClientRouter {
 export async function logoutAndRedirectToLogin(
   router: ClientRouter,
   returnTo: string,
-  reason?: "inactive",
+  reason?: "inactive"
 ) {
   const shouldRememberReturnTo = reason === "inactive";
 
