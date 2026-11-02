@@ -168,6 +168,9 @@ export async function PATCH(
   if (!target) {
     return NextResponse.json({ message: "User not found." }, { status: 404 });
   }
+  if (target.salaryRevisions?.length && salary !== undefined && salary !== target.salary) {
+    return NextResponse.json({ message: "Use Salary hike to change salary after a hike has been recorded." }, { status: 400 });
+  }
 
   // franchise_admin and employee must always be assigned to at least one store.
   const effectiveRole = role ?? targetRole;

@@ -1,3 +1,4 @@
+import { salaryForDates } from "@/lib/salary-history";
 import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 import Sale from "@/models/Sale";
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
 
   const [employees, sales, attendance, incentives, extraDays, advances, pnlInputs] = await Promise.all([
     User.find({ role: "employee", franchises: franchiseId })
-      .select("name salary dateOfJoining isActive archivedAt")
+      .select("name salary salaryBaseline salaryRevisions dateOfJoining isActive archivedAt")
       .lean(),
     Sale.find({ franchise: franchiseId, date: { $gte: overallFrom, $lte: overallTo } })
       .select("date totalSale totalExpenses swiggy zomato")
@@ -134,12 +135,12 @@ export async function GET(request: NextRequest) {
         const status = records.get(date);
         return status === "Present" || status === "Week Off";
       }).length;
-      const salary = employee.salary ?? 0;
+      const paidDates = payableDates.filter((date) => records.get(date) === "Present" || records.get(date) === "Week Off");
       const incentiveTotal = incentiveTotals.get(`${employeeId}:${period}`) ?? 0;
       const extraDaysTotal = extraDayTotals.get(`${employeeId}:${period}`) ?? 0;
       const advanceTotal = advanceTotals.get(`${employeeId}:${period}`) ?? 0;
       if (paidDays === 0 && incentiveTotal === 0 && extraDaysTotal === 0 && advanceTotal === 0) continue;
-      calculatedPayroll += roundCurrency((salary * (paidDays + extraDaysTotal)) / cycleDates.length) + incentiveTotal - advanceTotal;
+      calculatedPayroll += roundCurrency(salaryForDates(employee, paidDates, extraDaysTotal, cycleDates.length, range.to)) + incentiveTotal - advanceTotal;
     }
 
     const inputValues = pnlInputsByPeriod.get(period) ?? {};

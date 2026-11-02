@@ -12,6 +12,7 @@ import { getAuthorizedStoreAdminId, requireAuth } from "@/lib/api-auth";
 import { auditLog } from "@/lib/audit-log";
 import { isValidPeriod, localDateValue, getCycleRange, resolveCycleSettings, roundCurrency } from "@/lib/salary-cycle";
 import { datesBetween as enumerateDates } from "@/lib/date-utils";
+import { positionAtDate, salaryAtDate, salaryForDates } from "@/lib/salary-history";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
       isActive: { $ne: false },
       franchises: franchiseId,
     })
-      .select("name position employmentType salary dateOfJoining")
+      .select("name position employmentType salary salaryBaseline salaryRevisions dateOfJoining")
       .sort({ name: 1 })
       .lean(),
     Attendance.find({
@@ -105,9 +106,8 @@ export async function GET(request: NextRequest) {
     const absentDays = elapsedDates.filter((date) => records.get(date) === "Absent").length;
     const weekOffDays = elapsedDates.filter((date) => records.get(date) === "Week Off").length;
     const missingDays = elapsedDates.filter((date) => !records.has(date)).length;
-    const salary = employee.salary ?? 0;
+    const salary = salaryAtDate(employee, range.to);
     const cycleDays = cycleDates.length;
-    const projectedPaidDays = paidDays + futureDays;
     const employeeIncentives = incentivesByEmployee.get(employeeId) ?? [];
     const incentiveTotal = employeeIncentives.reduce((sum, item) => sum + item.amount, 0);
     const paidEarlyIncentiveTotal = roundCurrency(employeeIncentives.reduce((sum, item) => sum + (item.paidEarly ? item.amount : 0), 0));
@@ -115,15 +115,19 @@ export async function GET(request: NextRequest) {
     const extraDaysTotal = employeeExtraDays.reduce((sum, item) => sum + item.days, 0);
     const employeeAdvances = advancesByEmployee.get(employeeId) ?? [];
     const advanceTotal = employeeAdvances.reduce((sum, item) => sum + item.amount, 0);
+    const paidDates = elapsedDates.filter((date) => records.get(date) === "Present" || records.get(date) === "Week Off");
+    const basicSalary = roundCurrency(salaryForDates(employee, paidDates, extraDaysTotal, cycleDays, range.to));
+    const projectedBase = salaryForDates(employee, [...paidDates, ...payableDates.filter((date) => date > today)], extraDaysTotal, cycleDays, range.to);
 
     // Salary is prorated across the full cycle; projectedSalary additionally
     // treats remaining eligible dates as paid until attendance is recorded.
     return {
       employeeId,
       name: employee.name,
-      position: employee.position ?? "",
+      position: positionAtDate(employee, range.to),
       employmentType: employee.employmentType ?? "",
       salary,
+      basicSalary,
       paidDays,
       absentDays,
       weekOffDays,
@@ -137,8 +141,8 @@ export async function GET(request: NextRequest) {
       extraDaysTotal,
       advances: employeeAdvances,
       advanceTotal,
-      earnedSalary: roundCurrency((salary * (paidDays + extraDaysTotal)) / cycleDays) + incentiveTotal - advanceTotal - paidEarlyIncentiveTotal,
-      projectedSalary: roundCurrency((salary * (projectedPaidDays + extraDaysTotal)) / cycleDays) + incentiveTotal - advanceTotal - paidEarlyIncentiveTotal,
+      earnedSalary: basicSalary + incentiveTotal - advanceTotal - paidEarlyIncentiveTotal,
+      projectedSalary: roundCurrency(projectedBase) + incentiveTotal - advanceTotal - paidEarlyIncentiveTotal,
     };
   });
 

@@ -6,6 +6,7 @@ export interface Employee {
   position?: string;
   employmentType?: string;
   salary?: number;
+  latestSalary?: number;
   role: string;
   isActive: boolean;
   createdAt: string;

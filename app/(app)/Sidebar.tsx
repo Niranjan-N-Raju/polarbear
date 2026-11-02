@@ -104,6 +104,12 @@ const navGroups: NavGroup[] = [
         roles: ["franchise_admin"],
         icon: <SalaryIcon />,
       },
+      {
+        label: "Hikes & Promotions",
+        href: "/salary-hikes",
+        roles: ["franchise_admin"],
+        icon: <SalaryIcon />,
+      },
     ],
   },
   {

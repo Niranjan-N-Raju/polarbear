@@ -18,6 +18,8 @@ import { checkRateLimit, getClientIp, RATE_LIMITS } from "@/lib/rate-limit";
 import { createUserBodySchema } from "@/lib/validation";
 import { auditLog } from "@/lib/audit-log";
 import { nextEmployeeCode } from "@/lib/employee-code";
+import { positionAtDate, salaryAtDate } from "@/lib/salary-history";
+import { businessDateValue } from "@/lib/date-utils";
 
 /**
  * GET /api/users?franchiseId=xxx&page=1&limit=50
@@ -108,9 +110,10 @@ export async function GET(request: NextRequest) {
     employeeCode: u.employeeCode,
     email: u.email,
     phone: u.phone,
-    position: u.position,
+      position: positionAtDate(u, businessDateValue()),
     employmentType: u.employmentType,
-    salary: u.salary,
+    salary: u.salary == null ? null : salaryAtDate(u, businessDateValue()),
+    latestSalary: u.salary,
     role: u.role,
     isActive: u.isActive !== false,
     actualDob: u.actualDob,
