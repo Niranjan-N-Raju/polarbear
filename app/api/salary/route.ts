@@ -17,7 +17,10 @@ import {
   resolveCycleSettings,
   roundCurrency,
 } from "@/lib/salary-cycle";
-import { datesBetween as enumerateDates } from "@/lib/date-utils";
+import {
+  dateValueFromDate,
+  datesBetween as enumerateDates,
+} from "@/lib/date-utils";
 import {
   positionAtDate,
   salaryAtDate,
@@ -134,7 +137,7 @@ export async function GET(request: NextRequest) {
   const projections = employees.map((employee) => {
     const employeeId = String(employee._id);
     const joiningDate = employee.dateOfJoining
-      ? localDateValue(new Date(employee.dateOfJoining))
+      ? dateValueFromDate(employee.dateOfJoining)
       : range.from;
     const payableDates = cycleDates.filter((date) => date >= joiningDate);
     const elapsedDates = payableDates.filter((date) => date <= today);

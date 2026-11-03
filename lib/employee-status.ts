@@ -1,4 +1,4 @@
-import { localDateValue } from "@/lib/date-utils";
+import { dateValueFromDate } from "@/lib/date-utils";
 
 /**
  * Determines whether an employee was actively employed on a given date,
@@ -15,13 +15,13 @@ export function isEmployeeActiveOn(
   date: string
 ): boolean {
   if (employee.dateOfJoining) {
-    const joinDate = localDateValue(new Date(employee.dateOfJoining));
+    const joinDate = dateValueFromDate(employee.dateOfJoining);
     if (joinDate > date) return false;
   }
 
   if (employee.isActive === false) {
     if (!employee.archivedAt) return false;
-    const archivedDate = localDateValue(new Date(employee.archivedAt));
+    const archivedDate = dateValueFromDate(employee.archivedAt);
     // Active up to (and including) the day they were archived.
     if (archivedDate <= date) return false;
   }
