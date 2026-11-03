@@ -26,6 +26,7 @@ export interface IFranchise extends Document {
   logo?: IFranchiseLogo;
   shifts: IFranchiseShift[];
   positions: string[];
+  paidLeaveEnabled: boolean;
   salaryCycleType?: "calendar_month" | "custom";
   salaryCycleStartDay?: number;
   salaryCycleEndDay?: number;
@@ -91,6 +92,7 @@ const FranchiseSchema: Schema<IFranchise> = new Schema(
       default: [],
     },
     positions: { type: [String], default: DEFAULT_POSITION_OPTIONS },
+    paidLeaveEnabled: { type: Boolean, default: false },
     salaryCycleType: {
       type: String,
       enum: ["calendar_month", "custom"],

@@ -23,7 +23,10 @@ export type AuditAction =
   | "user.unarchived"
   | "user.archived"
   | "employee.promoted"
-  | "employee.salary.hiked";
+  | "employee.salary.hiked"
+  | "store.paid-leave.updated"
+  | "employee.paid-leave.incremented"
+  | "employee.paid-leave.decremented";
 
 interface AuditEntry {
   timestamp: string;

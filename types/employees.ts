@@ -7,6 +7,8 @@ export interface Employee {
   employmentType?: string;
   salary?: number;
   latestSalary?: number;
+  paidLeaveBalance?: number;
+  paidLeaveEligible?: boolean;
   role: string;
   isActive: boolean;
   createdAt: string;

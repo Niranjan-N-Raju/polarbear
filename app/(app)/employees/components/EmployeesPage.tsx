@@ -4,8 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import {
   faArchive,
   faCircleCheck,
+  faMinus,
+  faPlus,
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useToast } from "@/app/hooks/useToast";
 import { useStoreModal } from "@/app/(app)/store-context";
 import { SummaryCard } from "@/app/components/SummaryCard";
@@ -55,6 +58,8 @@ export default function EmployeesPage() {
   const [employeeToUnarchive, setEmployeeToUnarchive] =
     useState<Employee | null>(null);
   const [unarchivingId, setUnarchivingId] = useState<string | null>(null);
+  const [paidLeaveEnabled, setPaidLeaveEnabled] = useState(false);
+  const [adjustingPaidLeaveId, setAdjustingPaidLeaveId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [employeeTab, setEmployeeTab] = useState<"active" | "archived">(
     "active"
@@ -69,12 +74,35 @@ export default function EmployeesPage() {
             franchiseId
           )}&includeArchived=true&limit=500`
         : "/api/users?includeArchived=true&limit=500";
-      return employeesRequest(url)
-        .then((r) => r.json())
-        .then((data: { users?: Employee[]; message?: string }) => {
+      return Promise.all([
+        employeesRequest(url),
+        franchiseId
+          ? employeesRequest(
+              `/api/stores/paid-leave?franchiseId=${encodeURIComponent(franchiseId)}`
+            )
+          : Promise.resolve(null),
+      ])
+        .then(async ([response, paidLeaveResponse]) => {
+          const data = (await response.json()) as {
+            users?: Employee[];
+            message?: string;
+          };
+          if (!response.ok)
+            throw new Error(data.message ?? "Failed to load employees.");
+          let enabled = false;
+          if (paidLeaveResponse) {
+            const paidLeave = (await paidLeaveResponse.json()) as {
+              enabled?: boolean;
+              message?: string;
+            };
+            if (!paidLeaveResponse.ok)
+              throw new Error(paidLeave.message ?? "Failed to load paid leave settings.");
+            enabled = paidLeave.enabled === true;
+          }
           if (data.users) {
             setHasError(false);
             setEmployees(data.users);
+            setPaidLeaveEnabled(enabled);
           } else {
             setHasError(true);
             error(data.message ?? "Failed to load employees.");
@@ -156,6 +184,38 @@ export default function EmployeesPage() {
       error("Failed to unarchive employee. Please try again.");
     } finally {
       setUnarchivingId(null);
+    }
+  }
+
+  async function adjustPaidLeave(employee: Employee, action: "increment" | "decrement") {
+    if (!activeStore.id || adjustingPaidLeaveId) return;
+    setAdjustingPaidLeaveId(employee._id);
+    try {
+      const response = await employeesRequest(
+        `/api/users/${employee._id}/paid-leave`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            franchiseId: activeStore.id,
+            action,
+            amount: 1,
+          }),
+        }
+      );
+      const result = (await response.json()) as { message?: string };
+      if (!response.ok)
+        throw new Error(result.message ?? "Failed to update paid leave.");
+      success(result.message ?? "Paid leave balance updated.");
+      await loadEmployees(activeStore.id);
+    } catch (failure) {
+      error(
+        failure instanceof Error
+          ? failure.message
+          : "Failed to update paid leave."
+      );
+    } finally {
+      setAdjustingPaidLeaveId(null);
     }
   }
 
@@ -339,6 +399,11 @@ export default function EmployeesPage() {
                     <th className="text-left px-5 py-3 font-semibold text-gray-600">
                       Joined
                     </th>
+                    {paidLeaveEnabled && employeeTab === "active" && (
+                      <th className="text-left px-5 py-3 font-semibold text-gray-600">
+                        Paid Leave
+                      </th>
+                    )}
                     <th className="text-left px-5 py-3 font-semibold text-gray-600">
                       Status
                     </th>
@@ -393,6 +458,37 @@ export default function EmployeesPage() {
                       <td className="px-5 py-3.5 text-gray-600">
                         {formatJoiningDate(emp.dateOfJoining)}
                       </td>
+                      {paidLeaveEnabled && employeeTab === "active" && (
+                        <td className="px-5 py-3.5 text-gray-700">
+                          <div className="flex items-center gap-2">
+                            <span className="tabular-nums">{emp.paidLeaveBalance ?? 0}</span>
+                            {emp.paidLeaveEligible ? (
+                              <>
+                                <button
+                                  type="button"
+                                  aria-label={`Increase paid leave for ${emp.name}`}
+                                  disabled={adjustingPaidLeaveId === emp._id}
+                                  onClick={() => void adjustPaidLeave(emp, "increment")}
+                                  className="flex h-8 w-8 items-center justify-center rounded-md text-brand-teal hover:bg-brand-sand disabled:opacity-50"
+                                >
+                                  <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  aria-label={`Decrease paid leave for ${emp.name}`}
+                                  disabled={adjustingPaidLeaveId === emp._id || (emp.paidLeaveBalance ?? 0) < 1}
+                                  onClick={() => void adjustPaidLeave(emp, "decrement")}
+                                  className="flex h-8 w-8 items-center justify-center rounded-md text-brand-orange hover:bg-brand-orange/10 disabled:opacity-50"
+                                >
+                                  <FontAwesomeIcon icon={faMinus} className="h-3 w-3" />
+                                </button>
+                              </>
+                            ) : (
+                              <span className="text-xs text-gray-500">Available after six months</span>
+                            )}
+                          </div>
+                        </td>
+                      )}
                       <td className="px-5 py-3.5">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

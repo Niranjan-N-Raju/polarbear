@@ -116,6 +116,8 @@ export default function StoreConfigPage() {
   const [shiftEndTime, setShiftEndTime] = useState("");
   const [editingShiftId, setEditingShiftId] = useState<string | null>(null);
   const [savingShifts, setSavingShifts] = useState(false);
+  const [paidLeaveEnabled, setPaidLeaveEnabled] = useState(false);
+  const [savingPaidLeave, setSavingPaidLeave] = useState(false);
 
   const loadConfig = useCallback(async () => {
     if (!activeStoreId) {
@@ -125,7 +127,7 @@ export default function StoreConfigPage() {
     }
     setLoading(true);
     try {
-      const [response, shiftsResponse] = await Promise.all([
+      const [response, shiftsResponse, paidLeaveResponse] = await Promise.all([
         storeConfigRequest(
           `/api/salary?franchiseId=${encodeURIComponent(
             activeStoreId
@@ -133,6 +135,9 @@ export default function StoreConfigPage() {
         ),
         storeConfigRequest(
           `/api/stores/shifts?franchiseId=${encodeURIComponent(activeStoreId)}`
+        ),
+        storeConfigRequest(
+          `/api/stores/paid-leave?franchiseId=${encodeURIComponent(activeStoreId)}`
         ),
       ]);
       const result = (await response.json()) as StoreConfigData & {
@@ -148,9 +153,16 @@ export default function StoreConfigPage() {
       };
       if (!shiftsResponse.ok)
         throw new Error(shiftsResult.message ?? "Failed to load store shifts.");
+      const paidLeaveResult = (await paidLeaveResponse.json()) as {
+        enabled?: boolean;
+        message?: string;
+      };
+      if (!paidLeaveResponse.ok)
+        throw new Error(paidLeaveResult.message ?? "Failed to load paid leave settings.");
       result.shifts = shiftsResult.shifts ?? [];
       setData(result);
       setShifts(result.shifts);
+      setPaidLeaveEnabled(paidLeaveResult.enabled === true);
       setEditing(false);
       if (!result.cycle.configured) {
         setCycleType("calendar_month");
@@ -225,6 +237,34 @@ export default function StoreConfigPage() {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function savePaidLeave() {
+    if (!activeStoreId) return;
+    setSavingPaidLeave(true);
+    try {
+      const response = await storeConfigRequest("/api/stores/paid-leave", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          franchiseId: activeStoreId,
+          enabled: paidLeaveEnabled,
+        }),
+      });
+      const result = (await response.json()) as { message?: string };
+      if (!response.ok)
+        throw new Error(result.message ?? "Failed to save paid leave settings.");
+      success(result.message ?? "Paid leave settings saved.");
+      await loadConfig();
+    } catch (saveError) {
+      error(
+        saveError instanceof Error
+          ? saveError.message
+          : "Failed to save paid leave settings."
+      );
+    } finally {
+      setSavingPaidLeave(false);
     }
   }
 
@@ -502,6 +542,35 @@ export default function StoreConfigPage() {
                 </p>
               </form>
             )}
+          </section>
+
+          <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-gray-900">Paid Leave</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Enable manual employee leave balances for this store. Employees become eligible after six months of service.
+                </p>
+              </div>
+              <label className="inline-flex min-h-11 items-center gap-3 text-sm font-medium text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={paidLeaveEnabled}
+                  onChange={(event) => setPaidLeaveEnabled(event.target.checked)}
+                  disabled={savingPaidLeave}
+                  className="h-4 w-4 accent-brand-orange"
+                />
+                {paidLeaveEnabled ? "Enabled" : "Disabled"}
+              </label>
+              <button
+                type="button"
+                onClick={() => void savePaidLeave()}
+                disabled={savingPaidLeave}
+                className="min-h-11 rounded-lg bg-brand-orange px-4 py-2 text-sm font-medium text-white hover:bg-brand-orange/90 disabled:opacity-60"
+              >
+                {savingPaidLeave ? "Saving…" : "Save paid leave setting"}
+              </button>
+            </div>
           </section>
 
           <section className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">

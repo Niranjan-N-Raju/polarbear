@@ -19,7 +19,7 @@ import { createUserBodySchema } from "@/lib/validation";
 import { auditLog } from "@/lib/audit-log";
 import { nextEmployeeCode } from "@/lib/employee-code";
 import { positionAtDate, salaryAtDate } from "@/lib/salary-history";
-import { businessDateValue } from "@/lib/date-utils";
+import { businessDateValue, isPaidLeaveEligible } from "@/lib/date-utils";
 
 /**
  * GET /api/users?franchiseId=xxx&page=1&limit=50
@@ -117,6 +117,8 @@ export async function GET(request: NextRequest) {
     employmentType: u.employmentType,
     salary: u.salary == null ? null : salaryAtDate(u, businessDateValue()),
     latestSalary: u.salary,
+    paidLeaveBalance: u.paidLeaveBalance ?? 0,
+    paidLeaveEligible: isPaidLeaveEligible(u.dateOfJoining),
     role: u.role,
     isActive: u.isActive !== false,
     actualDob: u.actualDob,
