@@ -484,7 +484,7 @@ export default function EmployeesPage() {
                                 </button>
                               </>
                             ) : (
-                              <span className="text-xs text-gray-500">Available after six months</span>
+                              <span className="text-xs text-gray-500">N/A</span>
                             )}
                           </div>
                         </td>
