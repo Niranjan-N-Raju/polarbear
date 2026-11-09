@@ -72,10 +72,16 @@ export default function AttendancePage() {
     document.title = "Attendance · Polar Bear";
   }, []);
 
+  function isRecordActive(record: { employeeId: string; date: string }) {
+    const employee = employees.find((item) => item._id === record.employeeId);
+    return !employee || isEmployeeActiveOn(employee, record.date);
+  }
+
   function daySummary(date: string) {
     const dayRecords = records.filter(
       (record) =>
         record.date === date &&
+        isRecordActive(record) &&
         (employeeFilter === "all" || record.employeeId === employeeFilter)
     );
     return STATUS_OPTIONS.reduce(
@@ -95,7 +101,8 @@ export default function AttendancePage() {
   function periodSummary() {
     const periodRecords = records.filter(
       (record) =>
-        employeeFilter === "all" || record.employeeId === employeeFilter
+        isRecordActive(record) &&
+        (employeeFilter === "all" || record.employeeId === employeeFilter)
     );
     return STATUS_OPTIONS.reduce(
       (summary, status) => {
@@ -113,7 +120,12 @@ export default function AttendancePage() {
   function dayDetails(date: string) {
     return STATUS_OPTIONS.reduce((grouped, status) => {
       grouped[status] = records
-        .filter((record) => record.date === date && record.status === status)
+        .filter(
+          (record) =>
+            record.date === date &&
+            record.status === status &&
+            isRecordActive(record)
+        )
         .map((record): AttendancePerson => {
           const employee = employees.find(
             (item) => item._id === record.employeeId

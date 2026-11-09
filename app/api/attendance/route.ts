@@ -42,36 +42,61 @@ export async function GET(request: NextRequest) {
       franchise: franchiseObjectId,
       "entries.days.date": { $gte: from, $lte: to },
     }).lean();
-    const defaults = rosters.flatMap((roster) =>
+    const candidates = rosters.flatMap((roster) =>
       roster.entries.flatMap((entry) =>
         entry.days
           .filter((day) => day.date >= from! && day.date <= to!)
           .map((day) => ({
-            updateOne: {
-              filter: {
-                franchise: franchiseObjectId,
-                employee: entry.employee,
-                date: day.date,
-              },
-              update: {
-                $setOnInsert: {
-                  franchise: franchiseObjectId,
-                  employee: entry.employee,
-                  date: day.date,
-                  status: (day.shift === "leave"
-                    ? "Absent"
-                    : day.shift === "off"
-                    ? "Week Off"
-                    : "Present") as AttendanceStatus,
-                  comment: "",
-                  createdBy: roster.createdBy,
-                },
-              },
-              upsert: true,
-            },
+            createdBy: roster.createdBy,
+            employee: entry.employee,
+            day,
           }))
       )
     );
+    const employeeIds = [
+      ...new Set(candidates.map((candidate) => String(candidate.employee))),
+    ];
+    const employees = employeeIds.length
+      ? await User.find({
+          _id: { $in: employeeIds },
+          role: "employee",
+          franchises: franchiseObjectId,
+        })
+          .select("_id dateOfJoining archivedAt isActive")
+          .lean()
+      : [];
+    const employeesById = new Map(
+      employees.map((employee) => [String(employee._id), employee])
+    );
+    const defaults = candidates
+      .filter(({ employee, day }) => {
+        const record = employeesById.get(String(employee));
+        return Boolean(record) && isEmployeeActiveOn(record!, day.date);
+      })
+      .map(({ createdBy, employee, day }) => ({
+        updateOne: {
+          filter: {
+            franchise: franchiseObjectId,
+            employee,
+            date: day.date,
+          },
+          update: {
+            $setOnInsert: {
+              franchise: franchiseObjectId,
+              employee,
+              date: day.date,
+              status: (day.shift === "leave"
+                ? "Absent"
+                : day.shift === "off"
+                ? "Week Off"
+                : "Present") as AttendanceStatus,
+              comment: "",
+              createdBy,
+            },
+          },
+          upsert: true,
+        },
+      }));
     // Roster defaults fill missing attendance only; existing admin corrections win.
     if (defaults.length > 0) await Attendance.bulkWrite(defaults);
   }
@@ -79,13 +104,30 @@ export async function GET(request: NextRequest) {
     franchise: franchiseId,
     ...(hasDate ? { date } : { date: { $gte: from, $lte: to } }),
   }).lean();
+  const employees = records.length
+    ? await User.find({
+        _id: {
+          $in: [...new Set(records.map((record) => String(record.employee)))],
+        },
+      })
+        .select("_id dateOfJoining archivedAt isActive")
+        .lean()
+    : [];
+  const employeesById = new Map(
+    employees.map((employee) => [String(employee._id), employee])
+  );
   return NextResponse.json({
-    records: records.map((record) => ({
-      employeeId: String(record.employee),
-      date: record.date,
-      status: record.status,
-      comment: record.comment ?? "",
-    })),
+    records: records
+      .filter((record) => {
+        const employee = employeesById.get(String(record.employee));
+        return !employee || isEmployeeActiveOn(employee, record.date);
+      })
+      .map((record) => ({
+        employeeId: String(record.employee),
+        date: record.date,
+        status: record.status,
+        comment: record.comment ?? "",
+      })),
   });
 }
 

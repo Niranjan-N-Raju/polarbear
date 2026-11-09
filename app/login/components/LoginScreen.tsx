@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { FieldError, fieldClass } from "@/app/components/form-validation";
 import {
   ChevronRightIcon,
@@ -23,13 +24,15 @@ export function LoginScreen() {
           <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full border-[32px] border-brand-yellow/40" />
           <div className="absolute -bottom-28 -left-20 h-72 w-72 rounded-full border-[46px] border-brand-orange/30" />
           <div className="relative">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-lg font-black text-brand-teal shadow-sm">
-                PB
-              </div>
-              <span className="text-lg font-semibold tracking-wide">
-                Polar Bear
-              </span>
+            <div className="flex h-[66px] w-[184px] items-center justify-center rounded-lg bg-white px-2 py-1 shadow-sm">
+              <Image
+                src="/polar-bear-logo.png"
+                alt="Polar Bear"
+                width={184}
+                height={66}
+                className="h-full w-full object-contain"
+                priority
+              />
             </div>
             <div className="mt-24 max-w-sm">
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-brand-yellow">
@@ -51,16 +54,17 @@ export function LoginScreen() {
 
         <main className="flex items-center justify-center bg-white px-6 py-10 sm:px-12">
           <div className="w-full max-w-md">
-            <div className="relative -mx-6 -mt-10 mb-8 overflow-hidden bg-brand-teal px-6 pb-9 pt-8 text-white shadow-[0_18px_30px_-12px_rgba(0,0,0,0.35)] sm:-mx-12 lg:hidden">
-              <div className="relative flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-sm font-black text-brand-teal shadow-sm">
-                  PB
-                </div>
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand-yellow">
-                    Polar Bear
-                  </p>
-                  <p className="text-base font-semibold">Store Operations</p>
+            <div className="relative -mx-6 -mt-10 mb-8 overflow-hidden bg-white px-6 pb-9 pt-8 text-gray-900 sm:-mx-12 lg:hidden">
+              <div className="relative flex justify-center">
+                <div className="flex h-[58px] w-[160px] items-center justify-center">
+                  <Image
+                    src="/polar-bear-logo.png"
+                    alt="Polar Bear"
+                    width={184}
+                    height={66}
+                    className="h-full w-full object-contain"
+                    priority
+                  />
                 </div>
               </div>
             </div>
