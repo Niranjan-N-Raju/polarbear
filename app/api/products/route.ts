@@ -63,19 +63,19 @@ export async function POST(request: NextRequest) {
   const normalizedNames = names.map(normalizeProductName);
   if (names.length === 0) {
     return NextResponse.json(
-      { message: "Enter at least one product name." },
+      { message: "Enter at least one raw material name." },
       { status: 400 }
     );
   }
   if (names.some((name) => name.length > 100)) {
     return NextResponse.json(
-      { message: "Each product name must be 100 characters or fewer." },
+      { message: "Each raw material name must be 100 characters or fewer." },
       { status: 400 }
     );
   }
   if (new Set(normalizedNames).size !== normalizedNames.length) {
     return NextResponse.json(
-      { message: "Product names must be unique." },
+      { message: "Raw material names must be unique." },
       { status: 409 }
     );
   }
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if ((error as { code?: number }).code === 11000) {
       return NextResponse.json(
-        { message: "A product with this name already exists." },
+        { message: "A raw material with this name already exists." },
         { status: 409 }
       );
     }
@@ -127,7 +127,7 @@ export async function PATCH(request: NextRequest) {
     name.length > 100
   ) {
     return NextResponse.json(
-      { message: "A valid product and name are required." },
+      { message: "A valid raw material and name are required." },
       { status: 400 }
     );
   }
@@ -161,7 +161,7 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     if ((error as { code?: number }).code === 11000) {
       return NextResponse.json(
-        { message: "A product with this name already exists." },
+        { message: "A raw material with this name already exists." },
         { status: 409 }
       );
     }

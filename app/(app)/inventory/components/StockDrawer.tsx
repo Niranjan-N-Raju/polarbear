@@ -70,7 +70,7 @@ export default function StockDrawer({
             </h3>
             <label className="mt-5 block">
               <span className="mb-1 block text-sm font-medium text-gray-700">
-                Product
+                Raw material
               </span>
               <div className="relative">
                 <input
@@ -81,7 +81,7 @@ export default function StockDrawer({
                   onFocus={onProductFocus}
                   onKeyDown={onProductKeyDown}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-cyan focus:outline-none focus:ring-1 focus:ring-brand-cyan"
-                  placeholder="Search predefined products"
+                  placeholder="Search raw materials"
                 />
                 {productMenuOpen && (
                   <div className="absolute z-10 mt-1 max-h-44 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">

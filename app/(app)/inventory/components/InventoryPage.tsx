@@ -78,7 +78,7 @@ export default function InventoryPage() {
         message?: string;
       };
       if (!productResponse.ok)
-        throw new Error(productData.message ?? "Failed to load products.");
+        throw new Error(productData.message ?? "Failed to load raw materials.");
       if (!inventoryResponse.ok)
         throw new Error(inventoryData.message ?? "Failed to load inventory.");
       setProducts(productData.products ?? []);
@@ -145,7 +145,7 @@ export default function InventoryPage() {
       !/^\d+$/.test(stockQuantity) ||
       Number(stockQuantity) < 1
     ) {
-      setStockError("Choose a product, expiry date, and positive quantity.");
+      setStockError("Choose a raw material, expiry date, and positive quantity.");
       return;
     }
     setBusy(true);
