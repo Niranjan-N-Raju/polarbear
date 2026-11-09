@@ -11,12 +11,6 @@ Polar Bear is a Next.js App Router application for store operations.
 
 The application intentionally uses Mongoose for the primary domain models and the native MongoDB driver for inventory transactions. Keep that boundary explicit when adding inventory behavior.
 
-## Inventory Collection Rename
-
-The shared catalog now uses the MongoDB collection `raw_materials`; API paths and the existing `productId` inventory references remain unchanged.
-
-Before deploying code that uses the new collection, stop catalog and inventory writes. If the current `products` collection still has store-scoped entries, run `npm run migrate:shared-products -- --apply` first. Then run `npm run migrate:raw-materials` to review the rename, followed by `npm run migrate:raw-materials -- --apply`. The rename preserves document IDs and indexes, so inventory and disposal references remain valid. The script refuses to run if both collection names already exist. Deploy the application after the migration completes.
-
 ## Getting Started
 
 First, run the development server:

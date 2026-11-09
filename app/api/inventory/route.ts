@@ -2,13 +2,12 @@ import { ObjectId } from "mongodb";
 import { readJsonObject } from "@/lib/request-json";
 import { NextRequest, NextResponse } from "next/server";
 import { validateCsrf } from "@/lib/csrf";
-import {
-  getInventoryClient,
-  getInventoryDatabase,
-  RAW_MATERIALS_COLLECTION,
-} from "@/lib/inventory-db";
+import { getInventoryClient, getInventoryDatabase } from "@/lib/inventory-db";
 import { getStoreAccess } from "@/lib/api-auth";
-import { isValidDate, parsePositiveInteger } from "@/lib/inventory/validation";
+import {
+  isValidDate,
+  parsePositiveInteger,
+} from "@/lib/inventory/validation";
 import { localDateValue } from "@/lib/date-utils";
 
 export async function GET(request: NextRequest) {
@@ -60,7 +59,7 @@ export async function POST(request: NextRequest) {
   }
   const db = await getInventoryDatabase();
   const product = await db
-    .collection(RAW_MATERIALS_COLLECTION)
+    .collection("products")
     .findOne({ _id: new ObjectId(body.productId) });
   if (!product)
     return NextResponse.json(

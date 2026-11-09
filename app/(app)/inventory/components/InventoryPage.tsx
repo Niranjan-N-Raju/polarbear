@@ -229,8 +229,9 @@ export default function InventoryPage() {
     }
     if (event.key === "Enter" && filteredProducts[highlightedProduct]) {
       event.preventDefault();
-      setStockProduct(filteredProducts[highlightedProduct]);
-      setProductQuery(filteredProducts[highlightedProduct].name);
+      const selected = filteredProducts[highlightedProduct];
+      setStockProduct(selected);
+      setProductQuery(selected.name);
       setProductMenuOpen(false);
     }
     if (event.key === "Escape") {

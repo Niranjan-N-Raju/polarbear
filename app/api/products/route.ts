@@ -2,11 +2,7 @@ import { ObjectId } from "mongodb";
 import { readJsonObject } from "@/lib/request-json";
 import { NextRequest, NextResponse } from "next/server";
 import { validateCsrf } from "@/lib/csrf";
-import {
-  getInventoryClient,
-  getInventoryDatabase,
-  RAW_MATERIALS_COLLECTION,
-} from "@/lib/inventory-db";
+import { getInventoryClient, getInventoryDatabase } from "@/lib/inventory-db";
 import { getStoreAccess, requireAuth } from "@/lib/api-auth";
 import { normalizeProductName } from "@/lib/inventory/validation";
 
@@ -35,7 +31,7 @@ export async function GET(request: NextRequest) {
   }
   const db = await getInventoryDatabase();
   const products = await db
-    .collection(RAW_MATERIALS_COLLECTION)
+    .collection("products")
     .find({})
     .sort({ name: 1 })
     .toArray();
@@ -91,9 +87,7 @@ export async function POST(request: NextRequest) {
       normalizedName: normalizedNames[index],
       createdAt: new Date(),
     }));
-    await db
-      .collection(RAW_MATERIALS_COLLECTION)
-      .insertMany(products, { ordered: true });
+    await db.collection("products").insertMany(products, { ordered: true });
     return NextResponse.json(
       {
         products: products.map((product) => ({
@@ -119,9 +113,10 @@ export async function PATCH(request: NextRequest) {
   if (csrfError) return csrfError;
   const forbidden = await requireCatalogueAdmin();
   if (forbidden) return forbidden;
-  const jsonBody = await readJsonObject<{ productId?: string; name?: unknown }>(
-    request
-  );
+  const jsonBody = await readJsonObject<{
+    productId?: string;
+    name?: unknown;
+  }>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
   const name = typeof body.name === "string" ? body.name.trim() : "";
@@ -143,7 +138,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const productId = new ObjectId(body.productId);
     const existing = await db
-      .collection(RAW_MATERIALS_COLLECTION)
+      .collection("products")
       .findOne({ _id: productId });
     if (!existing)
       return NextResponse.json(
@@ -153,7 +148,7 @@ export async function PATCH(request: NextRequest) {
     // Product and inventory snapshots are kept in sync as one MongoDB transaction.
     await session.withTransaction(async () => {
       await db
-        .collection(RAW_MATERIALS_COLLECTION)
+        .collection("products")
         .updateOne(
           { _id: productId },
           { $set: { name, normalizedName } },

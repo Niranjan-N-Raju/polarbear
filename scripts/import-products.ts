@@ -74,7 +74,7 @@ async function main() {
       return;
     }
 
-    const targetProducts = targetDb.collection("raw_materials");
+    const targetProducts = targetDb.collection("products");
     await targetProducts.createIndex({ normalizedName: 1 }, { unique: true });
 
     const products = [...productsByName.values()];

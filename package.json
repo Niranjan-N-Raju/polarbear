@@ -14,7 +14,6 @@
     "seed": "tsx scripts/seed.ts",
     "import:products": "tsx scripts/import-products.ts",
     "migrate:shared-products": "tsx scripts/migrate-shared-products.ts",
-    "migrate:raw-materials": "tsx scripts/rename-products-to-raw-materials.ts",
     "import:sales": "tsx scripts/import-sales.ts"
   },
   "dependencies": {
