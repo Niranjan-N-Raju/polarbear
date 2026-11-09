@@ -32,7 +32,7 @@ export async function connectToDatabase() {
   if (existing?.connection.readyState === 2) {
     try {
       await existing.connection.asPromise();
-      if (existing.connection.readyState === 1) return existing;
+      return existing;
     } catch {
       // Clear a connection that was still opening but failed before becoming usable.
     }
