@@ -31,6 +31,7 @@ async function main() {
   try {
     await client.connect();
     const db = client.db(databaseName);
+    // Run this cleanup against the legacy collection before renaming it to raw_materials.
     const products = db.collection<ProductDocument>("products");
     const inventory = db.collection("inventory_items");
     const dumpedInventory = db.collection("dumped_inventory");

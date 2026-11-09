@@ -1,5 +1,7 @@
 import { MongoClient, type Db, type MongoClientOptions } from "mongodb";
 
+export const RAW_MATERIALS_COLLECTION = "raw_materials";
+
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.MONGODB_DB;
 
@@ -44,7 +46,7 @@ export async function getInventoryDb(): Promise<Db> {
 export async function ensureInventoryIndexes(db: Db) {
   await Promise.all([
     db
-      .collection("products")
+      .collection(RAW_MATERIALS_COLLECTION)
       .createIndex({ normalizedName: 1 }, { unique: true }),
     db
       .collection("inventory_items")
