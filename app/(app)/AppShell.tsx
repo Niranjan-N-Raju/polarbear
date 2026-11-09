@@ -233,8 +233,9 @@ export default function AppShell({
     () => ({
       openStoreModal: () => setModalOpen(true),
       activeStoreId: activeFranchiseId || null,
+      userRole,
     }),
-    [activeFranchiseId]
+    [activeFranchiseId, userRole]
   );
 
   return (

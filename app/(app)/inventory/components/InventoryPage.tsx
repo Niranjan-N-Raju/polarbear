@@ -3,11 +3,14 @@
 import {
   faClock,
   faHourglassHalf,
+  faPlus,
   faThumbsUp,
   faTriangleExclamation,
 } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStoreModal } from "@/app/(app)/store-context";
+import { FieldError } from "@/app/components/form-validation";
 import { useToast } from "@/app/hooks/useToast";
 import { SummaryCard } from "@/app/components/SummaryCard";
 import { MobileSummaryDrawer } from "@/app/components/MobileSummaryDrawer";
@@ -28,7 +31,7 @@ import ConfirmModal from "./ConfirmModal";
 import StockDrawer from "./StockDrawer";
 
 export default function InventoryPage() {
-  const { activeStoreId } = useStoreModal();
+  const { activeStoreId, userRole } = useStoreModal();
   useEffect(() => {
     document.title = "Inventory · Polar Bear";
   }, []);
@@ -39,6 +42,10 @@ export default function InventoryPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [stockModal, setStockModal] = useState(false);
+  const [productModal, setProductModal] = useState(false);
+  const [newProductNames, setNewProductNames] = useState("");
+  const [productError, setProductError] = useState("");
+  const [productBusy, setProductBusy] = useState(false);
   const [stockProduct, setStockProduct] = useState<Product | null>(null);
   const [productQuery, setProductQuery] = useState("");
   const [productMenuOpen, setProductMenuOpen] = useState(false);
@@ -183,6 +190,46 @@ export default function InventoryPage() {
       setBusy(false);
     }
   }
+  async function createProducts(event: React.SyntheticEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!newProductNames.trim()) {
+      setProductError("Enter at least one product name.");
+      return;
+    }
+    setProductBusy(true);
+    setProductError("");
+    try {
+      const response = await inventoryRequest("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newProductNames }),
+      });
+      const data = (await response.json()) as {
+        message?: string;
+        products?: Product[];
+      };
+      if (!response.ok)
+        throw new Error(data.message ?? "Failed to add products.");
+      const addedProducts = data.products ?? [];
+      setProducts((current) =>
+        [...current, ...addedProducts].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        )
+      );
+      setProductModal(false);
+      setNewProductNames("");
+      success("Products added successfully.");
+      if (activeStoreId) await load();
+    } catch (saveError) {
+      setProductError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Failed to add products."
+      );
+    } finally {
+      setProductBusy(false);
+    }
+  }
   async function updateStock(
     action: "consume" | "dump",
     item: InventoryItem,
@@ -254,6 +301,19 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
+          {userRole === "admin" && (
+            <button
+              type="button"
+              onClick={() => {
+                setProductError("");
+                setProductModal(true);
+              }}
+              className="inline-flex items-center gap-2 rounded-lg border border-brand-orange px-4 py-2 text-sm font-medium text-brand-orange hover:bg-brand-orange/5"
+            >
+              <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+              Add Product
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -492,6 +552,62 @@ export default function InventoryPage() {
           onSubmit={receiveStock}
           onClose={() => setStockModal(false)}
         />
+      )}
+      {productModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-products-title"
+            onSubmit={(event) => void createProducts(event)}
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl"
+          >
+            <h3
+              id="add-products-title"
+              className="text-lg font-semibold text-gray-900"
+            >
+              Add products
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Products are shared across all stores. Separate multiple names
+              with commas.
+            </p>
+            <label className="mt-5 block">
+              <span className="mb-1 block text-sm font-medium text-gray-700">
+                Product name(s)
+              </span>
+              <input
+                autoFocus
+                value={newProductNames}
+                onChange={(event) => {
+                  setNewProductNames(event.target.value);
+                  setProductError("");
+                }}
+                aria-invalid={Boolean(productError)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-cyan focus:outline-none focus:ring-1 focus:ring-brand-cyan"
+                placeholder="e.g. Vanilla tub, Chocolate cone"
+              />
+            </label>
+            <FieldError message={productError} />
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                disabled={productBusy}
+                onClick={() => setProductModal(false)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={productBusy}
+                className="rounded-lg bg-brand-orange px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+              >
+                {productBusy ? "Adding…" : "Add products"}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
       {useItem && (
         <ConfirmModal

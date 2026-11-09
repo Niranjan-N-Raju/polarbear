@@ -6,6 +6,7 @@ import type { StoreModalContextType } from "@/types/app-shell";
 export const StoreModalContext = createContext<StoreModalContextType>({
   openStoreModal: () => {},
   activeStoreId: null,
+  userRole: "",
 });
 
 export function useStoreModal() {
