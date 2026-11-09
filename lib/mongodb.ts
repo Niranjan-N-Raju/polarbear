@@ -25,8 +25,23 @@ const cached = globalThis as typeof globalThis & {
 cached.mongoose ??= { conn: null, promise: null };
 
 export async function connectToDatabase() {
-  if (cached.mongoose!.conn) {
-    return cached.mongoose!.conn;
+  const existing = cached.mongoose!.conn;
+  if (existing?.connection.readyState === 1) {
+    return existing;
+  }
+  if (existing?.connection.readyState === 2) {
+    try {
+      await existing.connection.asPromise();
+      if (existing.connection.readyState === 1) return existing;
+    } catch {
+      // Clear a connection that was still opening but failed before becoming usable.
+    }
+    cached.mongoose!.conn = null;
+    cached.mongoose!.promise = null;
+  } else if (existing) {
+    // A disconnected connection must not be handed to queries to buffer until timeout.
+    cached.mongoose!.conn = null;
+    cached.mongoose!.promise = null;
   }
 
   if (!cached.mongoose!.promise) {

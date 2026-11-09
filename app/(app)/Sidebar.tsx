@@ -113,6 +113,30 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Catalog",
+    icon: <InventoryIcon />,
+    items: [
+      {
+        label: "Raw Materials",
+        href: "/raw-materials",
+        roles: ["admin"],
+        icon: <InventoryIcon />,
+      },
+      {
+        label: "Product Categories",
+        href: "/product-categories",
+        roles: ["admin"],
+        icon: <InventoryIcon />,
+      },
+      {
+        label: "Products",
+        href: "/products",
+        roles: ["admin"],
+        icon: <InventoryIcon />,
+      },
+    ],
+  },
+  {
     label: null,
     items: [
       {
@@ -126,12 +150,6 @@ const navGroups: NavGroup[] = [
         href: "/users",
         roles: ["admin", "sub_admin"],
         icon: <UsersIcon />,
-      },
-      {
-        label: "Raw Materials",
-        href: "/raw-materials",
-        roles: ["admin"],
-        icon: <InventoryIcon />,
       },
     ],
   },
