@@ -127,6 +127,12 @@ const navGroups: NavGroup[] = [
         roles: ["admin", "sub_admin"],
         icon: <UsersIcon />,
       },
+      {
+        label: "Raw Materials",
+        href: "/raw-materials",
+        roles: ["admin"],
+        icon: <InventoryIcon />,
+      },
     ],
   },
 ];

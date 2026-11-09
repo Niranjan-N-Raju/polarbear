@@ -23,8 +23,12 @@ async function requireCatalogueAdmin(): Promise<NextResponse | null> {
 }
 
 export async function GET(request: NextRequest) {
-  const access = await getStoreAccess(request);
-  if ("response" in access) return access.response;
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  if (auth.role !== "admin") {
+    const access = await getStoreAccess(request);
+    if ("response" in access) return access.response;
+  }
   const db = await getInventoryDatabase();
   const products = await db
     .collection("products")
@@ -167,44 +171,3 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
-  const csrfError = validateCsrf(request);
-  if (csrfError) return csrfError;
-  const forbidden = await requireCatalogueAdmin();
-  if (forbidden) return forbidden;
-  const jsonBody = await readJsonObject<{ productId?: string }>(request);
-  if (jsonBody.response) return jsonBody.response;
-  const body = jsonBody.body;
-  if (!body.productId || !ObjectId.isValid(body.productId)) {
-    return NextResponse.json(
-      { message: "A valid product is required." },
-      { status: 400 }
-    );
-  }
-
-  const db = await getInventoryDatabase();
-  const productId = new ObjectId(body.productId);
-  const product = await db.collection("products").findOne({ _id: productId });
-  if (!product)
-    return NextResponse.json(
-      { message: "Product not found." },
-      { status: 404 }
-    );
-
-  const [inventoryReferences, dumpedReferences] = await Promise.all([
-    db.collection("inventory_items").countDocuments({ productId }),
-    db.collection("dumped_inventory").countDocuments({ productId }),
-  ]);
-  if (inventoryReferences || dumpedReferences) {
-    return NextResponse.json(
-      {
-        message:
-          "This product has stock or disposal history and cannot be deleted.",
-      },
-      { status: 409 }
-    );
-  }
-
-  await db.collection("products").deleteOne({ _id: productId });
-  return NextResponse.json({ message: "Product deleted." });
-}

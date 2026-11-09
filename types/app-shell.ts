@@ -18,7 +18,6 @@ export interface SidebarProps {
 export interface StoreModalContextType {
   openStoreModal: () => void;
   activeStoreId: string | null;
-  userRole: string;
 }
 
 export interface StoreSelectModalProps {
