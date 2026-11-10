@@ -44,6 +44,10 @@ async function save(request: NextRequest, editing: boolean) {
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
   const name = typeof body.name === "string" ? body.name.trim() : "";
+  const price = body.price;
+  if (typeof price !== "number" || !Number.isFinite(price) || price < 0.01 || price > 1_000_000 || Math.abs(price * 100 - Math.round(price * 100)) > 0.000001) {
+    return NextResponse.json({ message: "Enter a price between 0.01 and 1,000,000 rupees, with at most two decimal places." }, { status: 400 });
+  }
   const categoryId = typeof body.categoryId === "string" ? body.categoryId : "";
   const productId = typeof body.productId === "string" ? body.productId : "";
   const dineIn = parseComposition(body.dineIn);
@@ -60,7 +64,7 @@ async function save(request: NextRequest, editing: boolean) {
   if (await db.collection("products").countDocuments({ _id: { $in: materialIds.map((id) => new ObjectId(id)) } }) !== materialIds.length) {
     return NextResponse.json({ message: "Choose existing raw materials for both compositions." }, { status: 400 });
   }
-  const values = { name, normalizedName: normalizeProductName(name), categoryId: new ObjectId(categoryId), dineIn, takeAway };
+  const values = { name, normalizedName: normalizeProductName(name), price: Math.round(price * 100) / 100, categoryId: new ObjectId(categoryId), dineIn, takeAway };
   try {
     if (editing) {
       const product = await db.collection("menu_products").findOneAndUpdate(

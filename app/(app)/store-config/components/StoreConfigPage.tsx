@@ -21,6 +21,7 @@ import {
 } from "../utils";
 import { StoreBrandingSection } from "./StoreBrandingSection";
 import { StorePositionsSection } from "./StorePositionsSection";
+import { StoreTablesSection } from "./StoreTablesSection";
 
 function SalaryCycleConfirmModal({
   editing,
@@ -403,6 +404,7 @@ export default function StoreConfigPage() {
         <div className="space-y-8">
           <StoreBrandingSection activeStoreId={activeStoreId} />
           <StorePositionsSection activeStoreId={activeStoreId} />
+          <StoreTablesSection key={activeStoreId} activeStoreId={activeStoreId} />
           <section className="rounded-xl border border-gray-200 bg-white p-6">
             <div className="border-b border-gray-100 pb-4">
               <h3 className="font-semibold text-gray-900">Salary Cycle</h3>

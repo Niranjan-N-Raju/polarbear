@@ -11,6 +11,7 @@ import {
 const GLOBAL_ADMIN_ROUTES = ["/stores", "/users"];
 // Routes accessible only to franchise_admin
 const FRANCHISE_ADMIN_ROUTES = [
+  "/billing",
   "/employees",
   "/attendance",
   "/store-config",
@@ -121,6 +122,7 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/login",
+    "/billing/:path*",
     "/dashboard/:path*",
     "/profile/:path*",
     "/employees/:path*",

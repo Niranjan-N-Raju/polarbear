@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBoxOpen, faBoxesStacked, faTags } from "@fortawesome/free-solid-svg-icons";
+import { faBoxOpen, faBoxesStacked, faCartShopping, faCashRegister, faClockRotateLeft, faTags } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStoreModal } from "./store-context";
@@ -51,6 +51,24 @@ const navGroups: NavGroup[] = [
         href: "/dashboard",
         roles: ["admin", "sub_admin", "franchise_admin", "employee"],
         icon: <DashboardIcon />,
+      },
+    ],
+  },
+  {
+    label: "Point of Sale",
+    icon: <FontAwesomeIcon icon={faCashRegister} />,
+    items: [
+      {
+        label: "New Order",
+        href: "/billing",
+        roles: ["franchise_admin"],
+        icon: <FontAwesomeIcon icon={faCartShopping} />,
+      },
+      {
+        label: "Billing History",
+        href: "/billing/past-bills",
+        roles: ["franchise_admin"],
+        icon: <FontAwesomeIcon icon={faClockRotateLeft} />,
       },
     ],
   },
@@ -188,19 +206,19 @@ function NavLinkItem({
     <Link
       href={item.href}
       title={collapsed ? item.label : undefined}
-      className={`flex items-center gap-3 rounded-xl text-sm font-medium transition ${
+      className={`flex h-11 items-center gap-3 rounded-xl text-sm font-medium transition ${
         collapsed
-          ? "justify-center px-3 py-3"
+          ? "justify-center px-3 py-2.5"
           : indent
           ? "py-2.5 pl-9 pr-3"
-          : "px-3 py-3"
+          : "px-3 py-2.5"
       } border border-transparent border-l-[3px] ${
         isActive
           ? "border-brand-teal/15 border-l-brand-teal bg-brand-teal/10 text-brand-teal shadow-sm"
           : "text-gray-600 hover:bg-brand-sand hover:text-brand-orange"
       }`}
     >
-      {item.icon}
+      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-5 [&>svg]:w-5">{item.icon}</span>
       {!collapsed && <span className="truncate">{item.label}</span>}
     </Link>
   );
@@ -261,9 +279,9 @@ function NavGroupSection({
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-gray-600 transition hover:bg-brand-sand hover:text-brand-orange"
+        className="flex h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-brand-sand hover:text-brand-orange"
       >
-        {group.icon}
+        <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center [&>svg]:h-5 [&>svg]:w-5">{group.icon}</span>
         <span className="flex-1 truncate text-left">{group.label}</span>
         <ChevronRightIcon
           className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
@@ -322,7 +340,7 @@ function NavList({
 }>) {
   const { expanded, toggle } = useExpandedGroups(pathname);
   return (
-    <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-5">
+    <nav className="flex-1 space-y-1.5 overflow-y-auto px-3 py-5">
       {navGroups.map((group, groupIndex) => {
         const key = groupKey(group, groupIndex);
         return (

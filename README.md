@@ -11,7 +11,39 @@ Polar Bear is a Next.js App Router application for store operations.
 
 The application intentionally uses Mongoose for the primary domain models and the native MongoDB driver for inventory transactions. Keep that boundary explicit when adding inventory behavior.
 
-## Getting Started
+## Billing
+
+Franchise administrators can open **Point of Sale > New Order** for their selected store.
+New orders default to dine-in. Choose dine-in or takeaway and select a serving
+token using the searchable selector, then add priced menu products and save a
+bill. The existing table numbers act as serving tokens for both order types;
+token selection is required for every new bill. T1 through T10 are available by default; **Store Config >
+Table Configuration > Add table** persists additional table numbers per store.
+Admins set tax-exclusive INR prices in
+**Catalog > Products**. Legacy products without prices cannot be billed.
+
+Totals are calculated on the server in integer paise, with 5% GST rounded once
+on the subtotal. Billing request UUIDs are issued by the server, so saving also
+works in local HTTP environments without browser cryptography APIs. Bills
+snapshot names/prices and are saved idempotently; later
+catalog edits do not change saved receipts. **Point of Sale > Billing History** defaults
+to today's full business day in Asia/Kolkata on entry. Filter by date range,
+order type, serving token, and bill number; results are paginated in groups of 25.
+Legacy takeaway bills without a token remain unchanged and show "Token not recorded."
+Bill details and customer information can be opened and receipts printed.
+**Reset to today** restores the current IST date and clears other filters.
+Saving a bill does not record payment, deduct inventory, or automatically
+create a daily sales/P&L record.
+
+Customer details are optional. When included, a 10-digit mobile number and first
+name are required; middle and last names are optional. All four fields are
+encrypted at rest using the existing `FIELD_ENCRYPTION_KEY`; customer writes
+fail closed if secure storage is not configured. Billing uses the existing
+native MongoDB inventory connection and initializes its indexes on first use.
+The MySQL reference documents the new collections; no database migration or
+production data is included in it.
+
+## Local Development
 
 First, run the development server:
 

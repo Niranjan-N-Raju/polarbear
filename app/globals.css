@@ -1,5 +1,31 @@
 @import "tailwindcss";
 
+@media print {
+  body:has(.billing-receipt) * {
+    visibility: hidden;
+  }
+
+  body:has(.billing-receipt) .billing-receipt,
+  body:has(.billing-receipt) .billing-receipt * {
+    visibility: visible;
+  }
+
+  body:has(.billing-receipt) .billing-receipt {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    max-width: none;
+    background: white;
+    color: black;
+  }
+
+  body:has(.billing-receipt),
+  body:has(.billing-receipt) main {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
+
 :root {
   --background: #f8f7f1;
   --foreground: #1f292b;

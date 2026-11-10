@@ -13,6 +13,7 @@ interface Ingredient { productId: string; quantity: number }
 interface MenuProduct {
   _id: string;
   name: string;
+  price?: number;
   categoryId: string;
   dineIn: Ingredient[];
   takeAway: Ingredient[];
@@ -136,6 +137,7 @@ export default function ProductsPageView() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [dineIn, setDineIn] = useState<DraftIngredient[]>([]);
   const [takeAway, setTakeAway] = useState<DraftIngredient[]>([]);
@@ -164,6 +166,7 @@ export default function ProductsPageView() {
     const draft = (items?: Ingredient[]) => items?.map((item, index) => ({ key: index, productId: item.productId, quantity: String(item.quantity) })) ?? [{ key: 0, productId: "", quantity: "" }];
     setEditingId(product?._id ?? null);
     setName(product?.name ?? "");
+    setPrice(product?.price === undefined ? "" : String(product.price));
     setCategoryId(product?.categoryId ?? "");
     setDineIn(draft(product?.dineIn));
     setTakeAway(draft(product?.takeAway));
@@ -173,6 +176,11 @@ export default function ProductsPageView() {
 
   async function saveProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const productPrice = Number(price);
+    if (!Number.isFinite(productPrice) || productPrice < 0.01 || productPrice > 1_000_000 || Math.abs(productPrice * 100 - Math.round(productPrice * 100)) > 0.000001) {
+      setFormError("Enter a positive price with at most two decimal places.");
+      return;
+    }
     const parse = (rows: DraftIngredient[]) => rows.map((row) => ({ productId: row.productId, quantity: Number(row.quantity) }));
     const valid = (rows: Ingredient[]) => rows.length > 0 && rows.length <= 100 &&
       new Set(rows.map((row) => row.productId)).size === rows.length &&
@@ -193,7 +201,7 @@ export default function ProductsPageView() {
       const response = await inventoryRequest("/api/menu-products", {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...(editingId ? { productId: editingId } : {}), name: name.trim(), categoryId, ...compositions }),
+        body: JSON.stringify({ ...(editingId ? { productId: editingId } : {}), name: name.trim(), price: productPrice, categoryId, ...compositions }),
       });
       const data = await response.json() as { product?: MenuProduct; message?: string };
       if (!response.ok || !data.product) throw new Error(data.message ?? "Unable to save product.");
@@ -219,7 +227,7 @@ export default function ProductsPageView() {
     return (
       <fieldset className="min-w-0 space-y-3 border-t border-gray-200 pt-4">
         <legend className="w-full px-0">
-          <span className="flex flex-wrap items-center justify-between gap-3">
+          <span className="flex min-h-10 flex-wrap items-center justify-between gap-3">
             <span className="text-base font-semibold text-gray-900">{title} composition *</span>
             {mode === "takeAway" && (
               <button type="button" disabled={saving} className={`${commandClass} ml-auto`} onClick={() => { setTakeAway(dineIn.map((row) => ({ ...row }))); setFormError(""); }}>
@@ -278,9 +286,10 @@ export default function ProductsPageView() {
         <form onSubmit={(event) => void saveProduct(event)} className="space-y-6">
           <h2 className="text-lg font-semibold text-gray-900">{editingId ? "Edit product" : "Add product"}</h2>
           <fieldset disabled={saving} className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               <label><span className="mb-1 block text-sm font-medium text-gray-700">Category *</span><select required autoFocus value={categoryId} onChange={(event) => { setCategoryId(event.target.value); setFormError(""); }} className={inputClass}><option value="">Select category</option>{categories.map((category) => <option key={category._id} value={category._id}>{category.name}</option>)}</select></label>
               <label><span className="mb-1 block text-sm font-medium text-gray-700">Product name *</span><input required maxLength={100} autoComplete="off" value={name} onChange={(event) => { setName(event.target.value); setFormError(""); }} className={inputClass} /></label>
+              <label><span className="mb-1 block text-sm font-medium text-gray-700">Price (INR, before GST) *</span><input required type="number" min="0.01" max="1000000" step="0.01" value={price} onChange={(event) => { setPrice(event.target.value); setFormError(""); }} className={inputClass} /></label>
             </div>
             <div className="grid items-start gap-6 xl:grid-cols-2">{compositionEditor("dineIn")}{compositionEditor("takeAway")}</div>
           </fieldset>
@@ -294,7 +303,7 @@ export default function ProductsPageView() {
         <div className="overflow-x-auto border-y border-gray-200">
           <table className="w-full min-w-[700px] table-fixed text-sm">
             <thead className="border-b border-gray-200 bg-brand-sand/50 text-left text-xs font-semibold text-gray-600"><tr><th scope="col" className="w-1/5 px-4 py-3">Product</th><th scope="col" className="w-1/6 px-4 py-3">Category</th><th scope="col" className="px-4 py-3">Dine-in</th><th scope="col" className="px-4 py-3">Takeaway</th><th scope="col" className="w-20 px-4 py-3 text-right">Actions</th></tr></thead>
-            <tbody className="divide-y divide-gray-100">{products.map((product) => <tr key={product._id} className="align-top hover:bg-brand-sand/30"><td className="break-words px-4 py-4 font-medium text-gray-900">{product.name}</td><td className="break-words px-4 py-4">{categories.find((category) => category._id === product.categoryId)?.name ?? "Unavailable category"}</td><td className="break-words px-4 py-4 text-gray-600">{summary(product.dineIn)}</td><td className="break-words px-4 py-4 text-gray-600">{summary(product.takeAway)}</td><td className="px-4 py-3 text-right"><button type="button" title="Edit product" aria-label={`Edit ${product.name}`} onClick={() => openForm(product)} className="inline-flex h-9 w-9 items-center justify-center rounded-md text-brand-teal hover:bg-brand-cyan/10"><FontAwesomeIcon icon={faPen} aria-hidden="true" /></button></td></tr>)}</tbody>
+            <tbody className="divide-y divide-gray-100">{products.map((product) => <tr key={product._id} className="align-top hover:bg-brand-sand/30"><td className="break-words px-4 py-4 font-medium text-gray-900"><span className="block">{product.name}</span><span className="mt-1 block text-xs font-normal text-gray-500">{typeof product.price === "number" ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(product.price) : "Price not set"}</span></td><td className="break-words px-4 py-4">{categories.find((category) => category._id === product.categoryId)?.name ?? "Unavailable category"}</td><td className="break-words px-4 py-4 text-gray-600">{summary(product.dineIn)}</td><td className="break-words px-4 py-4 text-gray-600">{summary(product.takeAway)}</td><td className="px-4 py-3 text-right"><button type="button" title="Edit product" aria-label={`Edit ${product.name}`} onClick={() => openForm(product)} className="inline-flex h-9 w-9 items-center justify-center rounded-md text-brand-teal hover:bg-brand-cyan/10"><FontAwesomeIcon icon={faPen} aria-hidden="true" /></button></td></tr>)}</tbody>
           </table>
         </div>
       )}
