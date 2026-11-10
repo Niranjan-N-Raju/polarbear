@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBoxOpen, faBoxesStacked, faTags } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStoreModal } from "./store-context";
@@ -113,30 +115,6 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Catalog",
-    icon: <InventoryIcon />,
-    items: [
-      {
-        label: "Raw Materials",
-        href: "/raw-materials",
-        roles: ["admin"],
-        icon: <InventoryIcon />,
-      },
-      {
-        label: "Product Categories",
-        href: "/product-categories",
-        roles: ["admin"],
-        icon: <InventoryIcon />,
-      },
-      {
-        label: "Products",
-        href: "/products",
-        roles: ["admin"],
-        icon: <InventoryIcon />,
-      },
-    ],
-  },
-  {
     label: null,
     items: [
       {
@@ -150,6 +128,30 @@ const navGroups: NavGroup[] = [
         href: "/users",
         roles: ["admin", "sub_admin"],
         icon: <UsersIcon />,
+      },
+    ],
+  },
+  {
+    label: "Catalog",
+    icon: <InventoryIcon />,
+    items: [
+      {
+        label: "Raw Materials",
+        href: "/raw-materials",
+        roles: ["admin"],
+        icon: <FontAwesomeIcon icon={faBoxesStacked} className="w-5 shrink-0" />,
+      },
+      {
+        label: "Product Categories",
+        href: "/product-categories",
+        roles: ["admin"],
+        icon: <FontAwesomeIcon icon={faTags} className="w-5 shrink-0" />,
+      },
+      {
+        label: "Products",
+        href: "/products",
+        roles: ["admin"],
+        icon: <FontAwesomeIcon icon={faBoxOpen} className="w-5 shrink-0" />,
       },
     ],
   },
@@ -192,9 +194,9 @@ function NavLinkItem({
           : indent
           ? "py-2.5 pl-9 pr-3"
           : "px-3 py-3"
-      } ${
+      } border border-transparent border-l-[3px] ${
         isActive
-          ? "border border-brand-teal/15 bg-brand-teal/10 text-brand-teal shadow-sm"
+          ? "border-brand-teal/15 border-l-brand-teal bg-brand-teal/10 text-brand-teal shadow-sm"
           : "text-gray-600 hover:bg-brand-sand hover:text-brand-orange"
       }`}
     >
@@ -373,11 +375,11 @@ function ProfileLink({
     <Link
       href="/profile"
       title={collapsed ? "Profile" : undefined}
-      className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium transition ${
+      className={`flex w-full items-center gap-3 rounded-lg border border-transparent border-l-[3px] px-2.5 py-2.5 text-sm font-medium transition ${
         collapsed ? "justify-center" : ""
       } ${
         isActive
-          ? "border border-brand-teal/15 bg-brand-teal/10 text-brand-teal shadow-sm"
+          ? "border-brand-teal/15 border-l-brand-teal bg-brand-teal/10 text-brand-teal shadow-sm"
           : "text-gray-500 hover:bg-brand-sand hover:text-brand-orange"
       }`}
     >
@@ -396,11 +398,11 @@ function StoreConfigLink({
     <Link
       href="/store-config"
       title={collapsed ? "Store Config" : undefined}
-      className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm font-medium transition ${
+      className={`flex w-full items-center gap-3 rounded-lg border border-transparent border-l-[3px] px-2.5 py-2.5 text-sm font-medium transition ${
         collapsed ? "justify-center" : ""
       } ${
         isActive
-          ? "border border-brand-teal/15 bg-brand-teal/10 text-brand-teal shadow-sm"
+          ? "border-brand-teal/15 border-l-brand-teal bg-brand-teal/10 text-brand-teal shadow-sm"
           : "text-gray-500 hover:bg-brand-sand hover:text-brand-orange"
       }`}
     >

@@ -6,6 +6,19 @@ import { getInventoryClient, getInventoryDatabase } from "@/lib/inventory-db";
 import { getStoreAccess, requireAuth } from "@/lib/api-auth";
 import { normalizeProductName } from "@/lib/inventory/validation";
 
+const RAW_MATERIAL_UNITS = new Set(["g", "ml", "each"]);
+const RAW_MATERIAL_TYPES = new Set(["food", "packing", "none"]);
+function parseRawMaterialUnit(value: unknown): "g" | "ml" | "each" | null {
+  return typeof value === "string" && RAW_MATERIAL_UNITS.has(value)
+    ? (value as "g" | "ml" | "each")
+    : null;
+}
+function parseRawMaterialType(value: unknown): "food" | "packing" | "none" | null {
+  return typeof value === "string" && RAW_MATERIAL_TYPES.has(value)
+    ? (value as "food" | "packing" | "none")
+    : null;
+}
+
 // The product catalogue is shared by every store, so writes are limited to global admins
 // (matching the backend's requireRole('admin')); store admins may only read it.
 async function requireCatalogueAdmin(): Promise<NextResponse | null> {
@@ -40,6 +53,8 @@ export async function GET(request: NextRequest) {
       _id: String(product._id),
       name: product.name,
       normalizedName: product.normalizedName,
+      unit: product.unit ?? "each",
+      materialType: product.materialType ?? "food",
       createdAt: product.createdAt,
     })),
   });
@@ -50,9 +65,17 @@ export async function POST(request: NextRequest) {
   if (csrfError) return csrfError;
   const forbidden = await requireCatalogueAdmin();
   if (forbidden) return forbidden;
-  const jsonBody = await readJsonObject<{ name?: unknown }>(request);
+  const jsonBody = await readJsonObject<{
+    name?: unknown;
+    unit?: unknown;
+    materialType?: unknown;
+  }>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
+  const unit = body.unit === undefined ? "each" : parseRawMaterialUnit(body.unit);
+  const materialType = body.materialType === undefined
+    ? "food"
+    : parseRawMaterialType(body.materialType);
   const names =
     typeof body.name === "string"
       ? body.name
@@ -61,6 +84,18 @@ export async function POST(request: NextRequest) {
           .filter(Boolean)
       : [];
   const normalizedNames = names.map(normalizeProductName);
+  if (unit === null) {
+    return NextResponse.json(
+      { message: "Choose grams (g), milliliters (ml), or each." },
+      { status: 400 }
+    );
+  }
+  if (materialType === null) {
+    return NextResponse.json(
+      { message: "Choose food material or packing material." },
+      { status: 400 }
+    );
+  }
   if (names.length === 0) {
     return NextResponse.json(
       { message: "Enter at least one raw material name." },
@@ -85,6 +120,8 @@ export async function POST(request: NextRequest) {
       _id: new ObjectId(),
       name,
       normalizedName: normalizedNames[index],
+      unit,
+      materialType,
       createdAt: new Date(),
     }));
     await db.collection("products").insertMany(products, { ordered: true });
@@ -116,16 +153,24 @@ export async function PATCH(request: NextRequest) {
   const jsonBody = await readJsonObject<{
     productId?: string;
     name?: unknown;
+    unit?: unknown;
+    materialType?: unknown;
   }>(request);
   if (jsonBody.response) return jsonBody.response;
   const body = jsonBody.body;
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const normalizedName = normalizeProductName(name);
+  const unit = body.unit === undefined ? undefined : parseRawMaterialUnit(body.unit);
+  const materialType = body.materialType === undefined
+    ? undefined
+    : parseRawMaterialType(body.materialType);
   if (
     !body.productId ||
     !ObjectId.isValid(body.productId) ||
     !name ||
-    name.length > 100
+    name.length > 100 ||
+    (body.unit !== undefined && unit === null) ||
+    (body.materialType !== undefined && materialType === null)
   ) {
     return NextResponse.json(
       { message: "A valid raw material and name are required." },
@@ -151,7 +196,14 @@ export async function PATCH(request: NextRequest) {
         .collection("products")
         .updateOne(
           { _id: productId },
-          { $set: { name, normalizedName } },
+          {
+            $set: {
+              name,
+              normalizedName,
+              ...(unit ? { unit } : {}),
+              ...(materialType ? { materialType } : {}),
+            },
+          },
           { session }
         );
       await db

@@ -49,6 +49,8 @@ export async function ensureInventoryIndexes(db: Db) {
     db
       .collection("product_categories")
       .createIndex({ normalizedName: 1 }, { unique: true }),
+    db.collection("menu_products").createIndex({ normalizedName: 1 }, { unique: true }),
+    db.collection("menu_products").createIndex({ categoryId: 1 }),
     db
       .collection("inventory_items")
       .createIndex(

@@ -2,6 +2,8 @@ export interface Product {
   _id: string;
   name: string;
   normalizedName: string;
+  unit: "g" | "ml" | "each";
+  materialType: "food" | "packing" | "none";
 }
 
 export interface InventoryItem {

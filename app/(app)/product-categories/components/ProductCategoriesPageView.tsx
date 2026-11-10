@@ -136,19 +136,19 @@ export default function ProductCategoriesPageView() {
       ) : categories.length === 0 ? (
         <p className="py-12 text-center text-sm text-gray-500">No product categories yet.</p>
       ) : (
-        <div className="overflow-x-auto border-y border-brand-beige">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+          <table className="w-full min-w-[360px] text-sm">
             <thead>
-              <tr className="border-b border-brand-beige text-left text-xs font-semibold uppercase text-gray-500">
-                <th scope="col" className="px-4 py-3">Category</th>
-                <th scope="col" className="w-24 px-4 py-3 text-right">Edit</th>
+              <tr className="border-b border-brand-beige bg-brand-sand/50 text-left text-xs font-semibold text-gray-600">
+                <th scope="col" className="px-5 py-3.5">Category</th>
+                <th scope="col" className="w-24 px-5 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-brand-beige/70">
+            <tbody className="divide-y divide-gray-100">
               {categories.map((category) => (
-                <tr key={category._id}>
-                  <td className="px-4 py-3 font-medium text-gray-900">{category.name}</td>
-                  <td className="px-4 py-3 text-right">
+                <tr key={category._id} className="transition-colors hover:bg-brand-sand/30">
+                  <td className="px-5 py-3.5 font-medium text-gray-900">{category.name}</td>
+                  <td className="px-5 py-3.5 text-right">
                     <button type="button" aria-label={`Edit category ${category.name}`} onClick={() => openEdit(category)} className="inline-flex h-9 w-9 items-center justify-center rounded-md text-brand-teal hover:bg-brand-cyan/10">
                       <FontAwesomeIcon icon={faPen} aria-hidden="true" />
                     </button>
