@@ -174,13 +174,6 @@ UserSchema.index({ createdBy: 1 });
 UserSchema.index({ role: 1 });
 UserSchema.index({ createdBy: 1, role: 1 });
 
-// In development, hot-reloads preserve mongoose.models but may carry a stale
-// schema (e.g. an enum added after first load). Delete the cached model so the
-// schema is always up-to-date. In production the module only loads once anyway.
-if (mongoose.models.User) {
-  mongoose.deleteModel("User");
-}
-
 // Encrypt PII fields before saving. Uses AES-256-GCM when FIELD_ENCRYPTION_KEY
 // is set; falls back to plaintext with a warning (see lib/crypto.ts).
 const SENSITIVE_FIELDS = [
@@ -207,6 +200,8 @@ UserSchema.pre("save", function (next) {
   next();
 });
 
-const User: Model<IUser> = mongoose.model<IUser>("User", UserSchema);
+const User: Model<IUser> =
+  (mongoose.models.User as Model<IUser> | undefined) ??
+  mongoose.model<IUser>("User", UserSchema);
 
 export default User;

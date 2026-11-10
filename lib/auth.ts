@@ -53,8 +53,12 @@ export async function getAuthInfo(): Promise<AuthInfo | null> {
   if (!verified) return null;
   const { payload, restricted } = verified;
 
+  const startedAt = Date.now();
+  let stage = "connect";
+  let connected: Awaited<ReturnType<typeof connectToDatabase>> | null = null;
   try {
-    await connectToDatabase();
+    connected = await connectToDatabase();
+    stage = "user_lookup";
     const user = await User.findById(payload.id)
       .select("name role isActive sessionVersion mustChangePassword")
       .lean();
@@ -72,7 +76,22 @@ export async function getAuthInfo(): Promise<AuthInfo | null> {
         payload.mustChangePassword === true ||
         user.mustChangePassword === true,
     };
-  } catch {
+  } catch (error) {
+    console.error("[AUTH_CHECK_ERROR]", {
+      stage,
+      elapsedMs: Date.now() - startedAt,
+      errorType: error instanceof Error ? error.name : "UnknownError",
+      queryBufferTimeout:
+        error instanceof Error && /buffering timed out/i.test(error.message),
+      connectionState: connected?.connection.readyState ?? null,
+      userModelConnectionState: User.db.readyState,
+      userCollectionBuffered: User.collection.buffer,
+      userCollectionIsRegistered:
+        User.db.collections[User.collection.name] === User.collection,
+      modelUsesConnectedConnection: connected
+        ? User.db === connected.connection
+        : null,
+    });
     return null;
   }
 }
